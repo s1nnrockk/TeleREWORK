@@ -80,7 +80,7 @@ private:
 	bool _tryIPv6 = false;
 	bool _useProxyForCalls = false;
 	bool _proxyRotationEnabled = false;
-	bool _tgWsProxyEnabled = false;
+	bool _tgWsProxyEnabled = true;
 	bool _checkIpWarningShown = false;
 	int _proxyRotationTimeout = kDefaultProxyRotationTimeout;
 	MTP::ProxyData::Settings _settings = MTP::ProxyData::Settings::System;
