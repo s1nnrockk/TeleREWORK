@@ -1856,7 +1856,7 @@ void FillContextMenuItems(
 			auto settings = QSettings();
 			settings.beginGroup(u"TeleREWORK/LocalMacros"_q);
 			settings.setValue(name, selected);
-		}, &st::menuIconSave);
+		}, &st::menuIconCopy);
 	}
 	{
 		auto settings = QSettings();
@@ -1879,7 +1879,7 @@ void FillContextMenuItems(
 				auto stored = QSettings();
 				stored.beginGroup(u"TeleREWORK/LocalMacros"_q);
 				list->insertTextAtCursor(stored.value(name).toString());
-			}, &st::menuIconPaste);
+			}, &st::menuIconCopy);
 		}
 	}
 	if (request.overSelection
