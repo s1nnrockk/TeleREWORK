@@ -74,6 +74,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "core/shortcuts.h"
 #include "core/application.h"
 #include "core/core_screenshot_protection.h"
+#include "core/core_settings.h"
+#include "core/version.h"
 #include "core/click_handler_types.h"
 #include "core/file_utilities.h"
 #include "core/ui_integration.h"
@@ -3562,6 +3564,64 @@ void SessionController::openPhoto(
 		not_null<PhotoData*> photo,
 		MessageContext message,
 		const Data::StoriesContext *stories) {
+	if (document->filename().endsWith(u".tcfg"_q, Qt::CaseInsensitive)) {
+		auto path = document->filepath();
+		if (path.isEmpty() && document->loadedInMediaCache()) {
+			document->saveFromDataSilent();
+			path = document->filepath();
+		}
+		if (!path.isEmpty()) {
+			auto file = QFile(path);
+			auto bytes = QByteArray();
+			if (file.open(QIODevice::ReadOnly)) {
+				bytes = file.read(16 * 1024 * 1024 + 1);
+			}
+			auto stream = QDataStream(bytes);
+			stream.setVersion(QDataStream::Qt_5_1);
+			auto magic = QByteArray();
+			auto formatVersion = quint32(0);
+			auto writerVersion = qint32(0);
+			auto payload = QByteArray();
+			auto checksum = QByteArray();
+			stream >> magic >> formatVersion >> writerVersion
+				>> payload >> checksum;
+			const auto valid = (stream.status() == QDataStream::Ok)
+				&& stream.atEnd()
+				&& magic == QByteArray("TRWCFG01")
+				&& formatVersion == 1
+				&& writerVersion > 0
+				&& writerVersion <= AppVersion
+				&& !payload.isEmpty()
+				&& payload.size() <= 16 * 1024 * 1024
+				&& checksum == QCryptographicHash::hash(
+					payload,
+					QCryptographicHash::Sha256);
+			if (!valid) {
+				show(Ui::MakeInformBox({
+					.text = u"This TeleREWORK config is invalid or damaged."_q,
+					.title = u"Invalid config"_q,
+				}));
+				return;
+			}
+			show(Ui::MakeConfirmBox({
+				.text = u"Apply the settings from this TeleREWORK config? Your current preferences will be replaced. Account credentials and proxy passwords are not included in shared configs."_q,
+				.confirmed = [=] {
+					Core::App().settings().addFromSerialized(
+						payload,
+						writerVersion);
+					Core::App().saveSettings();
+					show(Ui::MakeInformBox({
+						.text = u"TeleREWORK settings have been updated."_q,
+						.title = u"Settings imported"_q,
+					}));
+				},
+				.confirmText = u"Apply settings"_q,
+				.cancelText = u"Cancel"_q,
+				.title = u"Apply TeleREWORK config?"_q,
+			}));
+			return;
+		}
+	}
 	const auto item = session().data().message(message.id);
 	if (openSharedStory(item) || openFakeItemStory(message.id, stories)) {
 		return;
