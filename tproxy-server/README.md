@@ -28,10 +28,14 @@ The relay does not accept arbitrary destinations. Every OPEN connects only to `M
 
 ```sh
 npm test
-MTPROXY_HOST=your-mtproxy.example MTPROXY_SECRET_HEX=... PUBLIC_HOST=relay.example npm start
+MTPROXY_HOST=your-mtproxy.example MTPROXY_SECRET_HEX=00112233445566778899aabbccddeeff PUBLIC_HOST=relay.example npm start
 ```
 
 Local HTTP is for development only. Production must terminate TLS at a reverse proxy and route the entire root or configured base-path prefix to this service. The configured path must be the same one entered in the client.
+
+## Deploy with Docker Compose
+
+See [DEPLOY.md](./DEPLOY.md) for a VPS deployment using Docker Compose and Caddy automatic HTTPS. The template keeps the relay private on the Docker network and publishes only ports 80/443.
 
 ## Status
 
