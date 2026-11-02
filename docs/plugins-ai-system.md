@@ -16,7 +16,7 @@ Do not embed shared secret keys or paid credentials. Never claim that anonymous 
 
 - Extension: `.tplugin`.
 - A package is a UTF-8 JSON document with schema version, stable ID, name, version, description, author, permissions, and declarative actions.
-- Export writes the exact validated package; import validates schema, ID, version, size, action count and permission declarations before installation.
+- Export writes the exact validated package with a `.tplugin` extension; import validates schema, ID, version, size, action count and permission declarations before installation. Importing an already-installed ID asks before replacing its package and preserves the separate enabled-state file.
 - The first runtime generation deliberately supports declarative actions only. It must not execute arbitrary native code, shell commands, downloaded binaries, or unrestricted JavaScript.
 - Unknown schema versions and unknown permissions are rejected, not silently accepted.
 - Import never enables a plugin automatically; installation and enablement are separate user actions.
