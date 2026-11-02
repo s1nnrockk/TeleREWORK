@@ -1370,13 +1370,13 @@ void BuildExportSection(SectionBuilder &builder) {
 						|| !file.open(QIODevice::WriteOnly)
 						|| file.write(data) != data.size()) {
 						controller->show(Ui::MakeInformBox({
+							 .text = u"TeleREWORK could not write the config file."_q,
 							.title = u"Config export failed"_q,
-							.text = u"TeleREWORK could not write the config file."_q,
 						}));
 					} else {
 						controller->show(Ui::MakeInformBox({
+							 .text = u"The .tcfg file is ready to share. Account credentials, proxy passwords and device-specific paths are excluded."_q,
 							.title = u"Config exported"_q,
-							.text = u"The .tcfg file is ready to share. Account credentials, proxy passwords and device-specific paths are excluded."_q,
 						}));
 					}
 				});
@@ -1400,8 +1400,8 @@ void BuildExportSection(SectionBuilder &builder) {
 					if (!file.open(QIODevice::ReadOnly)
 						|| (bytes = file.read(kTeleReworkConfigMaxBytes + 1)).isEmpty()) {
 						controller->show(Ui::MakeInformBox({
+							 .text = u"The selected file could not be read."_q,
 							.title = u"Invalid config"_q,
-							.text = u"The selected file could not be read."_q,
 						}));
 						return;
 					}
@@ -1409,22 +1409,22 @@ void BuildExportSection(SectionBuilder &builder) {
 					auto writerVersion = 0;
 					if (!ReadTeleReworkConfig(bytes, &payload, &writerVersion)) {
 						controller->show(Ui::MakeInformBox({
+							 .text = u"This file is not a valid TeleREWORK .tcfg file, or it is damaged."_q,
 							.title = u"Invalid config"_q,
-							.text = u"This file is not a valid TeleREWORK .tcfg file, or it is damaged."_q,
 						}));
 						return;
 					}
 					controller->show(Ui::MakeConfirmBox({
-						.title = u"Apply this config?"_q,
-						.text = u"Your current TeleREWORK preferences will be replaced by the settings in this file. This cannot be undone automatically. Continue?"_q,
+						 .text = u"Your current TeleREWORK preferences will be replaced by the settings in this file. This cannot be undone automatically. Continue?"_q,
 						.confirmText = u"Apply settings"_q,
 						.cancelText = u"Cancel"_q,
+						.title = u"Apply this config?"_q,
 						.confirmed = [=] {
 							settings->addFromSerialized(payload, writerVersion);
 							Core::App().saveSettings();
 							controller->show(Ui::MakeInformBox({
+								 .text = u"TeleREWORK settings have been updated."_q,
 								.title = u"Settings imported"_q,
-								.text = u"TeleREWORK settings have been updated."_q,
 							}));
 						},
 					}));
