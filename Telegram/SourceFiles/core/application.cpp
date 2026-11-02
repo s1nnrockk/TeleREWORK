@@ -106,6 +106,11 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "test/test_agent.h"
 
 #include <QtCore/QStandardPaths>
+#include <QtCore/QFileInfo>
+#include <QtCore/QProcess>
+#include <QtCore/QRandomGenerator>
+#include <QtCore/QThread>
+#include <QtNetwork/QTcpSocket>
 #include <QtCore/QMimeDatabase>
 #include <QtGui/QGuiApplication>
 #include <QtGui/QScreen>
@@ -159,6 +164,7 @@ struct Application::Private {
 	UiIntegration uiIntegration;
 	Settings settings;
 	std::unique_ptr<ProxyRotationManager> proxyRotation;
+	std::unique_ptr<QProcess> tgWsProxy;
 };
 
 Application::Application()
@@ -285,6 +291,14 @@ Application::~Application() {
 	closeAdditionalWindows();
 
 	_private->proxyRotation = nullptr;
+	if (_private->tgWsProxy) {
+		_private->tgWsProxy->terminate();
+		if (!_private->tgWsProxy->waitForFinished(1500)) {
+			_private->tgWsProxy->kill();
+			_private->tgWsProxy->waitForFinished(1000);
+		}
+		_private->tgWsProxy.reset();
+	}
 	_domain->finish();
 	MTP::WebProxy::Transport::Shutdown();
 
@@ -314,6 +328,88 @@ void Application::run() {
 	_notifications = std::make_unique<Window::Notifications::System>();
 
 	startLocalStorage();
+
+#ifdef Q_OS_WIN
+	{
+		auto &proxySettings = settings().proxy();
+		const auto selected = proxySettings.selected();
+		const auto isLocalTgWs = (selected.type == MTP::ProxyData::Type::Mtproto)
+			&& (selected.host == u"127.0.0.1"_q)
+			&& (selected.port == 1443);
+		if (proxySettings.tgWsProxyEnabled()) {
+			if (selected.type != MTP::ProxyData::Type::None && !isLocalTgWs) {
+				LOG(("TG WS Proxy: not started because another proxy is already selected."));
+			} else {
+				const auto executable = QDir(
+					QCoreApplication::applicationDirPath()
+				).filePath(u"TgWsProxy.exe"_q);
+				if (!QFileInfo::exists(executable)) {
+					LOG(("TG WS Proxy: TgWsProxy.exe is missing beside Telegram.exe."));
+				} else {
+					const auto secret = QString::number(
+						QRandomGenerator::system()->generate64(), 16
+					).rightJustified(16, u'0')
+						+ QString::number(
+							QRandomGenerator::system()->generate64(), 16
+						).rightJustified(16, u'0');
+					_private->tgWsProxy = std::make_unique<QProcess>();
+					_private->tgWsProxy->setProgram(executable);
+					_private->tgWsProxy->setArguments({
+						u"--host"_q, u"127.0.0.1"_q,
+						u"--port"_q, u"1443"_q,
+						u"--secret"_q, secret,
+					});
+					_private->tgWsProxy->start();
+					if (_private->tgWsProxy->waitForStarted(5000)) {
+						auto ready = false;
+						for (auto i = 0; i != 30 && !ready; ++i) {
+							QTcpSocket socket;
+							socket.connectToHost(
+								QHostAddress::LocalHost,
+								1443);
+							ready = socket.waitForConnected(100);
+							if (ready) {
+								socket.disconnectFromHost();
+							} else {
+								QThread::msleep(100);
+							}
+						}
+						if (ready) {
+							auto local = MTP::ProxyData();
+							local.type = MTP::ProxyData::Type::Mtproto;
+							local.host = u"127.0.0.1"_q;
+							local.port = 1443;
+							local.password = secret;
+							if (proxySettings.indexInList(local) < 0) {
+								proxySettings.addToList(local);
+							}
+							proxySettings.setSelected(local);
+							proxySettings.setSettings(
+								MTP::ProxyData::Settings::Enabled);
+							LOG(("TG WS Proxy: local MTProto listener is ready."));
+						} else {
+							LOG(("TG WS Proxy: local listener did not become ready."));
+							_private->tgWsProxy->kill();
+							_private->tgWsProxy->waitForFinished(1000);
+							_private->tgWsProxy.reset();
+						}
+					} else {
+						LOG(("TG WS Proxy: failed to start the bundled process."));
+						_private->tgWsProxy.reset();
+					}
+				}
+			}
+		} else if (isLocalTgWs) {
+			proxySettings.removeFromList(selected);
+			proxySettings.setSelected(MTP::ProxyData());
+			proxySettings.setSettings(MTP::ProxyData::Settings::System);
+		}
+	}
+#else
+	if (settings().proxy().tgWsProxyEnabled()) {
+		LOG(("TG WS Proxy: the bundled runtime is currently available on Windows only."));
+	}
+#endif
 
 	style::SetCustomFont(settings().customFontFamily());
 	style::internal::StartFonts();
