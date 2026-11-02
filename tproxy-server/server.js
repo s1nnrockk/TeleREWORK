@@ -112,7 +112,7 @@ function openStream(s, id) {
   const stream = {socket, recv:WINDOW, send:WINDOW, pending:[], pendingBytes:0};
   s.streams.set(id,stream);
   socket.setNoDelay(true);
-  socket.on("connect",()=>send(s,frame(0x04,id,Buffer.alloc(4).writeUInt32BE(0)===0?(()=>{const b=Buffer.alloc(4);b.writeUInt32BE(WINDOW);return b;})():Buffer.alloc(4))));
+  socket.on("connect",()=>{\n    const grant=Buffer.alloc(4); grant.writeUInt32BE(WINDOW);\n    send(s,frame(0x04,id,grant));\n  });
   socket.on("data",chunk=>{
     if (stream.closed) return;
     let offset=0;
