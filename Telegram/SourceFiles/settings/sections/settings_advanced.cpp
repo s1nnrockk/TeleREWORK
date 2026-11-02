@@ -1622,6 +1622,19 @@ void BuildPluginCenterSection(SectionBuilder &builder) {
 		.keywords = { u"plugin"_q, u"export"_q, u"share"_q },
 	});
 	builder.addButton({
+		.id = u"advanced/plugins_catalog"_q,
+		.title = u"Browse plugin catalog"_q,
+		.onClick = [=] {
+			const auto names = Plugins::CatalogNames();
+			bool accepted = false;
+			const auto name = QInputDialog::getItem(Core::App().getFileDialogParent(), u"Plugin Catalog"_q, u"Choose a ready-made plugin to install"_q, names, 0, false, &accepted);
+			if (!accepted || name.isEmpty()) return;
+			const auto installed = Plugins::InstallCatalog(name);
+			controller->show(Ui::MakeInformBox({ .text = installed.message, .title = installed.ok ? u"Catalog plugin installed"_q : u"Catalog install failed"_q }));
+		},
+		.keywords = { u"plugin"_q, u"catalog"_q, u"discover"_q, u"browse"_q, u"install"_q },
+	});
+	builder.addButton({
 		.id = u"advanced/plugins_ai_generate"_q,
 		.title = u"Generate plugin with free cloud AI"_q,
 		.onClick = [=] {
