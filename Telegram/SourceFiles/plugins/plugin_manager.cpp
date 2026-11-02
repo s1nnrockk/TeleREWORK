@@ -16,6 +16,9 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include <QtCore/QSaveFile>
 #include <QtCore/QStandardPaths>
 #include <QtCore/QUrl>
+#include <QtGui/QClipboard>
+#include <QtGui/QDesktopServices>
+#include <QtGui/QGuiApplication>
 #include <QtNetwork/QNetworkAccessManager>
 #include <QtNetwork/QNetworkReply>
 #include <QtNetwork/QNetworkRequest>
@@ -136,6 +139,82 @@ QStringList InstalledIds() {
 		result.push_back(file.chopped(QString(".tplugin").size()));
 	}
 	return result;
+}
+
+
+QStringList EnabledIds() {
+	auto result = QStringList();
+	for (const auto &id : InstalledIds()) {
+		if (IsEnabled(id)) {
+			result.push_back(id);
+		}
+	}
+	return result;
+}
+
+QStringList ActionLabels(const QString &id) {
+	auto result = QStringList();
+	if (!SafeId(id) || !IsEnabled(id)) {
+		return result;
+	}
+	QFile file(PackagePath(id));
+	if (!file.open(QIODevice::ReadOnly)) {
+		return result;
+	}
+	const auto document = QJsonDocument::fromJson(file.read(kMaxPackageBytes + 1));
+	if (!document.isObject() || !ValidateObject(document.object()).ok) {
+		return result;
+	}
+	for (const auto &value : document.object().value(u"actions"_q).toArray()) {
+		const auto action = value.toObject();
+		const auto type = action.value(u"type"_q).toString();
+		if (type == u"open_url"_q
+			|| type == u"copy_text"_q
+			|| type == u"insert_text_template"_q) {
+			result.push_back(action.value(u"label"_q).toString());
+		}
+	}
+	return result;
+}
+
+Result ExecuteAction(const QString &id, const QString &label) {
+	if (!SafeId(id) || !IsEnabled(id)) {
+		return { false, u"Enable this plugin before running its actions."_q };
+	}
+	QFile file(PackagePath(id));
+	if (!file.open(QIODevice::ReadOnly)) {
+		return { false, u"Plugin package could not be read."_q };
+	}
+	const auto document = QJsonDocument::fromJson(file.read(kMaxPackageBytes + 1));
+	if (!document.isObject()) {
+		return { false, u"Plugin package is invalid."_q };
+	}
+	const auto root = document.object();
+	if (!ValidateObject(root).ok) {
+		return { false, u"Plugin package failed validation."_q };
+	}
+	for (const auto &value : root.value(u"actions"_q).toArray()) {
+		const auto action = value.toObject();
+		if (action.value(u"label"_q).toString() != label) {
+			continue;
+		}
+		const auto type = action.value(u"type"_q).toString();
+		if (type == u"open_url"_q) {
+			const auto url = QUrl(action.value(u"url"_q).toString());
+			if (!url.isValid() || url.scheme() != u"https"_q || url.host().isEmpty()) {
+				return { false, u"Only valid HTTPS links can be opened."_q };
+			}
+			return QDesktopServices::openUrl(url)
+				? Result{ true, u"Link opened."_q, id }
+				: Result{ false, u"Could not open this link."_q, id };
+		} else if (type == u"copy_text"_q
+			|| type == u"insert_text_template"_q) {
+			QGuiApplication::clipboard()->setText(
+				action.value(u"text"_q).toString());
+			return { true, u"Text copied. Paste it where you need it."_q, id };
+		}
+	}
+	return { false, u"Action not found or not supported."_q, id };
 }
 
 Result Validate(const QByteArray &bytes) {
