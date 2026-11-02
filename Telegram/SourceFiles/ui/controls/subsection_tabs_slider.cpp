@@ -670,8 +670,18 @@ void SubsectionSlider::activate(int index) {
 	_sectionActivated.fire_copy(index);
 	if (weak) {
 		const auto duration = st::chatTabsSlider.duration;
-		_activeFrom.start(callback, was.from, now.from, duration);
-		_activeSize.start(callback, was.size, now.size, duration);
+		_activeFrom.start(
+			callback,
+			was.from,
+			now.from,
+			duration,
+			anim::easeOutQuint);
+		_activeSize.start(
+			callback,
+			was.size,
+			now.size,
+			duration,
+			anim::easeOutQuint);
 		_requestShown.fire_copy({ now.from, now.from + now.size });
 	}
 }
