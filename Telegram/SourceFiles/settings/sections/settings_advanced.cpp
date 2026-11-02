@@ -1416,9 +1416,6 @@ void BuildExportSection(SectionBuilder &builder) {
 					}
 					controller->show(Ui::MakeConfirmBox({
 						 .text = u"Your current TeleREWORK preferences will be replaced by the settings in this file. This cannot be undone automatically. Continue?"_q,
-						.confirmText = u"Apply settings"_q,
-						.cancelText = u"Cancel"_q,
-						.title = u"Apply this config?"_q,
 						.confirmed = [=] {
 							settings->addFromSerialized(payload, writerVersion);
 							Core::App().saveSettings();
@@ -1427,6 +1424,9 @@ void BuildExportSection(SectionBuilder &builder) {
 								.title = u"Settings imported"_q,
 							}));
 						},
+						.confirmText = u"Apply settings"_q,
+						.cancelText = u"Cancel"_q,
+						.title = u"Apply this config?"_q,
 					}));
 				});
 		},
