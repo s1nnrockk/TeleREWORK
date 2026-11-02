@@ -1609,6 +1609,7 @@ const auto kMeta = BuildHelper({
 	BuildPerformanceSection(builder);
 	BuildSpellcheckerSection(builder);
 	BuildScreenReaderSection(builder);
+	BuildTeleReworkThemeStudioSection(builder);
 	if (autoUpdate) {
 		BuildUpdateSection(builder, false);
 	}
