@@ -1360,7 +1360,6 @@ void BuildTeleReworkThemeStudioSection(SectionBuilder &builder) {
 	builder.addButton({
 		.id = u"advanced/theme_editor"_q,
 		.title = u"Customize colors and appearance"_q,
-		.icon = { &st::menuIconPalette },
 		.onClick = [=] {
 			controller->window().showRightColumn(
 				object_ptr<Window::Theme::Editor>(
