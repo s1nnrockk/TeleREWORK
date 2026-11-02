@@ -1650,6 +1650,57 @@ void BuildPluginCenterSection(SectionBuilder &builder) {
 		},
 		.keywords = { u"ai"_q, u"generate"_q, u"create"_q, u"plugin"_q },
 	});
+
+	builder.addButton({
+		.id = u"advanced/plugins_manage"_q,
+		.title = u"Enable, disable or remove plugin"_q,
+		.onClick = [=] {
+			const auto ids = Plugins::InstalledIds();
+			if (ids.isEmpty()) {
+				controller->show(Ui::MakeInformBox({
+					.text = u"There are no installed plugins yet."_q,
+					.title = u"Plugin Center"_q,
+				}));
+				return;
+			}
+			bool accepted = false;
+			const auto id = QInputDialog::getItem(
+				Core::App().getFileDialogParent(),
+				u"Manage plugins"_q,
+				u"Choose a plugin"_q,
+				ids,
+				0,
+				false,
+				&accepted);
+			if (!accepted || id.isEmpty()) {
+				return;
+			}
+			const auto enabled = Plugins::IsEnabled(id);
+			const auto choices = QStringList{
+				enabled ? u"Disable"_q : u"Enable"_q,
+				u"Remove"_q,
+			};
+			const auto action = QInputDialog::getItem(
+				Core::App().getFileDialogParent(),
+				u"Plugin action"_q,
+				id,
+				choices,
+				0,
+				false,
+				&accepted);
+			if (!accepted || action.isEmpty()) {
+				return;
+			}
+			const auto result = (action == u"Remove"_q)
+				? Plugins::Remove(id)
+				: Plugins::SetEnabled(id, !enabled);
+			controller->show(Ui::MakeInformBox({
+				.text = result.message,
+				.title = result.ok ? u"Plugin updated"_q : u"Plugin action failed"_q,
+			}));
+		},
+		.keywords = { u"plugin"_q, u"enable"_q, u"disable"_q, u"remove"_q, u"manage"_q },
+	});
 	builder.addButton({
 		.id = u"advanced/plugins_installed"_q,
 		.title = u"Installed plugins"_q,
