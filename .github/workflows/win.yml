@@ -266,7 +266,6 @@ jobs:
           move %OUT%\Updater.exe artifact/
           move %GITHUB_WORKSPACE%\TgWsProxy.exe artifact/
           copy %GITHUB_WORKSPACE%\third_party\tg-ws-proxy\LICENSE artifact\TG-WS-PROXY-LICENSE.txt
-          move %GITHUB_WORKSPACE%\TgWsProxy.exe artifact/
       - uses: actions/upload-artifact@v7
         name: Upload artifact.
         if: (env.UPLOAD_ARTIFACT == 'true') || (github.ref == 'refs/heads/nightly')
