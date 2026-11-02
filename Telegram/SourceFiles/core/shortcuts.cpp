@@ -536,6 +536,7 @@ void Manager::fillDefaults() {
 	set(u"media next"_q              , Command::MediaNext);
 
 	set(u"ctrl+f"_q                  , Command::Search);
+	set(u"%1+k"_q.arg(ctrl)         , Command::Search);
 	set(u"search"_q                  , Command::Search);
 	set(u"find"_q                    , Command::Search);
 
