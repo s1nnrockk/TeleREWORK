@@ -66,6 +66,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "ui/widgets/labels.h"
 #include "ui/wrap/slide_wrap.h"
 #include "ui/wrap/vertical_layout.h"
+#include "window/themes/window_theme.h"
+#include "window/themes/window_theme_editor.h"
 #include "window/window_controller.h"
 #include "window/window_saved_windows.h"
 #include "window/window_session_controller.h"
@@ -1347,6 +1349,75 @@ constexpr auto kTeleReworkConfigMaxBytes = 16 * 1024 * 1024;
 }
 
 } // namespace
+
+void BuildTeleReworkThemeStudioSection(SectionBuilder &builder) {
+	const auto controller = builder.controller();
+	builder.addSubsectionTitle({
+		.id = u"advanced/telerework_theme_studio"_q,
+		.title = rpl::single(u"TeleREWORK Theme Studio"_q),
+		.keywords = { u"theme"_q, u"appearance"_q, u"colors"_q, u"liquid glass"_q },
+	});
+	builder.addButton({
+		.id = u"advanced/theme_editor"_q,
+		.title = u"Customize colors and appearance"_q,
+		.icon = { &st::menuIconPalette },
+		.onClick = [=] {
+			controller->window().showRightColumn(
+				object_ptr<Window::Theme::Editor>(
+					controller->window().widget(),
+					&controller->window(),
+					Data::CloudTheme()));
+		},
+		.keywords = { u"theme"_q, u"editor"_q, u"customize"_q, u"palette"_q },
+	});
+	const auto applyPreset = [=](QString path, QString name) {
+		controller->window().show(Ui::MakeConfirmBox({
+			.text = u"Apply the "_q + name
+				+ u" appearance preset? Your current theme will be replaced."_q,
+			.confirmed = [=] {
+				if (Window::Theme::Apply(path)) {
+					Window::Theme::KeepApplied();
+					controller->window().show(Ui::MakeInformBox({
+						.text = name + u" theme is now active."_q,
+						.title = u"Theme applied"_q,
+					}));
+				} else {
+					controller->window().show(Ui::MakeInformBox({
+						.text = u"TeleREWORK could not load this theme preset."_q,
+						.title = u"Theme unavailable"_q,
+					}));
+				}
+			},
+			.confirmText = u"Apply theme"_q,
+			.cancelText = u"Cancel"_q,
+			.title = u"Change appearance?"_q,
+		}));
+	};
+	builder.addButton({
+		.id = u"advanced/theme_day_blue"_q,
+		.title = u"Day Blue"_q,
+		.onClick = [=] {
+			applyPreset(u":/gui/day-blue.tdesktop-theme"_q, u"Day Blue"_q);
+		},
+		.keywords = { u"theme"_q, u"blue"_q, u"light"_q, u"preset"_q },
+	});
+	builder.addButton({
+		.id = u"advanced/theme_night_green"_q,
+		.title = u"Night Green"_q,
+		.onClick = [=] {
+			applyPreset(u":/gui/night-green.tdesktop-theme"_q, u"Night Green"_q);
+		},
+		.keywords = { u"theme"_q, u"green"_q, u"dark"_q, u"preset"_q },
+	});
+	builder.addButton({
+		.id = u"advanced/theme_night"_q,
+		.title = u"Classic Night"_q,
+		.onClick = [=] {
+			applyPreset(Window::Theme::NightThemePath(), u"Classic Night"_q);
+		},
+		.keywords = { u"theme"_q, u"night"_q, u"dark"_q, u"preset"_q },
+	});
+}
 
 void BuildExportSection(SectionBuilder &builder) {
 	const auto controller = builder.controller();
