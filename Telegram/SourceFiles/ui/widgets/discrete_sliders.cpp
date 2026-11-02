@@ -236,8 +236,18 @@ void DiscreteSlider::setSelectedSection(int index) {
 		const auto to = getFinalActiveRange();
 		const auto duration = getAnimationDuration();
 		const auto updater = [this] { update(); };
-		_a_left.start(updater, from.left, to.left, duration);
-		_a_width.start(updater, from.width, to.width, duration);
+		_a_left.start(
+			updater,
+			from.left,
+			to.left,
+			duration,
+			anim::easeOutQuint);
+		_a_width.start(
+			updater,
+			from.width,
+			to.width,
+			duration,
+			anim::easeOutQuint);
 		_callbackAfterMs = crl::now() + duration;
 	}
 }
