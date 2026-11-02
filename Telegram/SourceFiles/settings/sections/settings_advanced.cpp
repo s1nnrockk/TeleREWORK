@@ -39,6 +39,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "mtproto/facade.h"
 #include "mtproto/mtp_instance.h"
 #include "platform/platform_specific.h"
+#include "plugins/plugin_manager.h"
 #include "settings/settings_builder.h"
 #include "settings/sections/settings_local_storage.h"
 #include "settings/sections/settings_main.h"
@@ -91,6 +92,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include <QtCore/QDataStream>
 #include <QtCore/QFile>
 #include <QtCore/QSaveFile>
+#include <QtWidgets/QInputDialog>
 
 namespace Settings {
 namespace {
@@ -1536,6 +1538,137 @@ void BuildExportSection(SectionBuilder &builder) {
 	});
 }
 
+
+void BuildPluginCenterSection(SectionBuilder &builder) {
+	const auto controller = builder.controller();
+	builder.addDivider();
+	builder.addSubsectionTitle({
+		.id = u"advanced/plugin_center"_q,
+		.title = rpl::single(u"TeleREWORK Plugin Center"_q),
+		.keywords = { u"plugins"_q, u"extensions"_q, u"ai"_q, u"studio"_q },
+	});
+	builder.addButton({
+		.id = u"advanced/plugins_import"_q,
+		.title = u"Import plugin (.tplugin)"_q,
+		.onClick = [=] {
+			FileDialog::GetOpenPath(
+				Core::App().getFileDialogParent(),
+				u"Import TeleREWORK plugin"_q,
+				u"TeleREWORK plugin (*.tplugin)"_q,
+				[=](FileDialog::OpenResult &&result) {
+					if (result.paths.isEmpty()) {
+						return;
+					}
+					QFile file(result.paths.front());
+					if (!file.open(QIODevice::ReadOnly)) {
+						controller->show(Ui::MakeInformBox({
+							.text = u"Could not read this plugin file."_q,
+							.title = u"Plugin import failed"_q,
+						}));
+						return;
+					}
+					const auto installed = Plugins::Install(
+						file.read(256 * 1024 + 1));
+					controller->show(Ui::MakeInformBox({
+						.text = installed.message,
+						.title = installed.ok
+							? u"Plugin imported"_q
+							: u"Plugin import failed"_q,
+					}));
+				});
+		},
+		.keywords = { u"plugin"_q, u"import"_q, u"install"_q },
+	});
+	builder.addButton({
+		.id = u"advanced/plugins_export"_q,
+		.title = u"Export plugin (.tplugin)"_q,
+		.onClick = [=] {
+			const auto ids = Plugins::InstalledIds();
+			if (ids.isEmpty()) {
+				controller->show(Ui::MakeInformBox({
+					.text = u"Install a plugin before exporting it."_q,
+					.title = u"No installed plugins"_q,
+				}));
+				return;
+			}
+			bool accepted = false;
+			const auto id = QInputDialog::getItem(
+				Core::App().getFileDialogParent(),
+				u"Export plugin"_q,
+				u"Choose a plugin"_q,
+				ids,
+				0,
+				false,
+				&accepted);
+			if (!accepted || id.isEmpty()) {
+				return;
+			}
+			FileDialog::GetWritePath(
+				Core::App().getFileDialogParent(),
+				u"Export TeleREWORK plugin"_q,
+				u"TeleREWORK plugin (*.tplugin)"_q,
+				id + u".tplugin"_q,
+				[=](QString &&path) {
+					const auto exported = Plugins::Export(id, path);
+					controller->show(Ui::MakeInformBox({
+						.text = exported.message,
+						.title = exported.ok
+							? u"Plugin exported"_q
+							: u"Plugin export failed"_q,
+					}));
+				});
+		},
+		.keywords = { u"plugin"_q, u"export"_q, u"share"_q },
+	});
+	builder.addButton({
+		.id = u"advanced/plugins_ai_generate"_q,
+		.title = u"Generate plugin with free local AI"_q,
+		.onClick = [=] {
+			bool accepted = false;
+			const auto prompt = QInputDialog::getMultiLineText(
+				Core::App().getFileDialogParent(),
+				u"TeleREWORK AI Studio"_q,
+				u"Describe the plugin you want to create:"_q,
+				QString(),
+				&accepted);
+			if (!accepted || prompt.trimmed().isEmpty()) {
+				return;
+			}
+			Plugins::GenerateWithLocalAI(
+				prompt,
+				crl::guard(controller, [=](Plugins::Result result) {
+					controller->show(Ui::MakeInformBox({
+						.text = result.message
+							+ (result.ok
+								? u"\nPlugin ID: "_q + result.id
+								: QString()),
+						.title = result.ok
+							? u"AI plugin generated"_q
+							: u"AI generation failed"_q,
+					}));
+				}));
+		},
+		.keywords = { u"ai"_q, u"generate"_q, u"create"_q, u"plugin"_q },
+	});
+	builder.addButton({
+		.id = u"advanced/plugins_installed"_q,
+		.title = u"Installed plugins"_q,
+		.label = rpl::single(QString::number(Plugins::InstalledCount())),
+		.keywords = { u"plugin"_q, u"installed"_q, u"manage"_q },
+	});
+	builder.addButton({
+		.id = u"advanced/plugins_ai_help"_q,
+		.title = u"How to enable local AI"_q,
+		.onClick = [=] {
+			controller->show(Ui::MakeInformBox({
+				.text = u"AI Studio uses Ollama on this computer. Install Ollama, start its local service, then run: ollama pull qwen2.5-coder:3b. No API key or subscription is required. Model generation uses your computer's resources. Generated plugins are validated before installation. Plugin actions are declarative and are not yet connected to Telegram runtime events."_q,
+				.title = u"Free local AI"_q,
+			}));
+		},
+		.keywords = { u"ollama"_q, u"local"_q, u"free"_q, u"model"_q },
+	});
+}
+
 void BuildScreenReaderSection(SectionBuilder &builder) {
 	const auto detected = base::ScreenReaderState::Instance()->active();
 	const auto disabled = Ui::ScreenReaderModeDisabled();
@@ -1610,6 +1743,7 @@ const auto kMeta = BuildHelper({
 	BuildSpellcheckerSection(builder);
 	BuildScreenReaderSection(builder);
 	BuildTeleReworkThemeStudioSection(builder);
+	BuildPluginCenterSection(builder);
 	if (autoUpdate) {
 		BuildUpdateSection(builder, false);
 	}
