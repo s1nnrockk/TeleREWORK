@@ -187,6 +187,7 @@ function bridgeHtml(capability) {
 }
 const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,"http://localhost");
+  if(req.method==="GET" && url.pathname==="/healthz") return json(res,200,{status:"ok"});
   if(req.method==="GET" && url.pathname===base){
     const cap=url.searchParams.get("bridge");
     if(cap && /^[A-Za-z0-9_-]{43}$/.test(cap)) {
