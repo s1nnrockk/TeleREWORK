@@ -31,6 +31,9 @@ struct Result {
 [[nodiscard]] bool IsEnabled(const QString &id);
 [[nodiscard]] Result Remove(const QString &id);
 [[nodiscard]] QStringList InstalledIds();
+[[nodiscard]] QStringList EnabledIds();
+[[nodiscard]] QStringList ActionLabels(const QString &id);
+[[nodiscard]] Result ExecuteAction(const QString &id, const QString &label);
 
 // Uses a local Ollama-compatible endpoint. No API key or paid provider is used.
 void GenerateWithLocalAI(
