@@ -239,6 +239,26 @@ jobs:
 
           cmake --build ..\out --config Debug --parallel
 
+      - name: Download and verify TG WS Proxy runtime.
+        shell: pwsh
+        run: |
+          if ('${{ matrix.arch }}' -eq 'arm64') {
+            $asset = 'TgWsProxy_windows_arm64.exe'
+            $expected = '6db3e04c531060328339357d6f2cd805cbc4f8276b76d4e4223dcaa4c971dc64'
+          } elseif ('${{ matrix.arch }}' -eq 'x64_x86') {
+            $asset = 'TgWsProxy_windows_7_32bit.exe'
+            $expected = '2d07d2de3933e5a462483dbc7e667525fdbdd04b5861d2dda72fc129a777a606'
+          } else {
+            $asset = 'TgWsProxy_windows.exe'
+            $expected = '454205cbcf76f333934108d893b58a528373bce8096624e27f0b6dc16eea660f'
+          }
+          $url = "https://github.com/Flowseal/tg-ws-proxy/releases/download/v1.11.4/$asset"
+          Invoke-WebRequest -Uri $url -OutFile "$env:GITHUB_WORKSPACE\TgWsProxy.exe"
+          $actual = (Get-FileHash "$env:GITHUB_WORKSPACE\TgWsProxy.exe" -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $expected) {
+            throw "TG WS Proxy checksum mismatch: $actual"
+          }
+
       - name: Move artifact.
         if: (env.UPLOAD_ARTIFACT == 'true') || (github.ref == 'refs/heads/nightly')
         run: |
