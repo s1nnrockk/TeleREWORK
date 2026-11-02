@@ -153,6 +153,21 @@ QStringList EnabledIds() {
 	return result;
 }
 
+QStringList CatalogNames() {
+	return { u"Quick Greeting Pack"_q, u"Meeting Follow-up"_q, u"Status Message Pack"_q };
+}
+
+Result InstallCatalog(const QString &name) {
+	const auto package = [&]() -> QByteArray {
+		if (name == u"Quick Greeting Pack"_q) return QByteArray(R"PLUGIN({"schema":"telerework.plugin","schema_version":1,"id":"org.telerework.catalog.greetings","name":"Quick Greeting Pack","version":"1.0.0","description":"Ready-to-copy friendly greetings.","author":"TeleREWORK Catalog","permissions":["clipboard.write"],"actions":[{"id":"hello","type":"copy_text","label":"Copy friendly hello","text":"Привет! Рад(а) тебя видеть 😊"},{"id":"thanks","type":"copy_text","label":"Copy thank you","text":"Спасибо большое! Очень ценю это."},{"id":"later","type":"copy_text","label":"Copy talk later","text":"Давай продолжим общение чуть позже!"}]})PLUGIN");
+		if (name == u"Meeting Follow-up"_q) return QByteArray(R"PLUGIN({"schema":"telerework.plugin","schema_version":1,"id":"org.telerework.catalog.meeting-followup","name":"Meeting Follow-up","version":"1.0.0","description":"Copy a concise meeting follow-up template.","author":"TeleREWORK Catalog","permissions":["clipboard.write"],"actions":[{"id":"followup","type":"insert_text_template","label":"Copy follow-up template","text":"Спасибо за встречу!\n\nКраткие итоги:\n• \n\nСледующие шаги:\n• \n\nЕсли что-то упустил(а), пожалуйста, дополните."}]})PLUGIN");
+		if (name == u"Status Message Pack"_q) return QByteArray(R"PLUGIN({"schema":"telerework.plugin","schema_version":1,"id":"org.telerework.catalog.status-messages","name":"Status Message Pack","version":"1.0.0","description":"Copy common status messages.","author":"TeleREWORK Catalog","permissions":["clipboard.write"],"actions":[{"id":"busy","type":"copy_text","label":"Copy busy status","text":"Сейчас занят(а), отвечу немного позже."},{"id":"focus","type":"copy_text","label":"Copy focus status","text":"Сейчас сосредоточен(а) на задаче. Напишу, когда освобожусь."},{"id":"offline","type":"copy_text","label":"Copy offline status","text":"Я пока не у компьютера. Вернусь и отвечу."}]})PLUGIN");
+		return QByteArray();
+	}();
+	if (package.isEmpty()) return { false, u"Catalog item not found."_q };
+	return Install(package);
+}
+
 QStringList ActionLabels(const QString &id) {
 	auto result = QStringList();
 	if (!SafeId(id) || !IsEnabled(id)) {
