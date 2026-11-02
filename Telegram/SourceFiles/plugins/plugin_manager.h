@@ -8,7 +8,11 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #pragma once
 
 #include <QtCore/QString>
+#include <QtCore/QByteArray>
 #include <QtCore/QJsonObject>
+#include <QtCore/QStringList>
+
+#include <functional>
 
 namespace Plugins {
 
@@ -24,6 +28,8 @@ struct Result {
 [[nodiscard]] Result Install(const QByteArray &bytes);
 [[nodiscard]] Result Export(const QString &id, const QString &path);
 [[nodiscard]] Result SetEnabled(const QString &id, bool enabled);
+[[nodiscard]] bool IsEnabled(const QString &id);
+[[nodiscard]] Result Remove(const QString &id);
 [[nodiscard]] QStringList InstalledIds();
 
 // Uses a local Ollama-compatible endpoint. No API key or paid provider is used.
