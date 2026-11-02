@@ -88,6 +88,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include <QtCore/QCryptographicHash>
 #include <QtCore/QDataStream>
 #include <QtCore/QFile>
+#include <QtCore/QSaveFile>
 
 namespace Settings {
 namespace {
@@ -1367,10 +1368,11 @@ void BuildExportSection(SectionBuilder &builder) {
 				u"TeleREWORK.tcfg"_q,
 				[=](QString &&path) {
 					const auto data = CreateTeleReworkConfig();
-					auto file = QFile(path);
+					auto file = QSaveFile(path);
 					if (data.isEmpty()
 						|| !file.open(QIODevice::WriteOnly)
-						|| file.write(data) != data.size()) {
+						|| file.write(data) != data.size()
+						|| !file.commit()) {
 						controller->show(Ui::MakeInformBox({
 							 .text = u"TeleREWORK could not write the config file."_q,
 							.title = u"Config export failed"_q,
