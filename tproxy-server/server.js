@@ -154,7 +154,7 @@ function handleFrames(s, frames) {
 }
 function bridgeHtml(capability) {
   const nonce=b64url(randomBytes(18));
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"></head><body><script nonce="${nonce}">
+  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"></head><body><script nonce="${nonce}">
 (async()=>{
  const cap=${JSON.stringify(capability)};
  const origin=location.origin;
@@ -179,14 +179,15 @@ function bridgeHtml(capability) {
  },{once:true});
 })();
 </script></body></html>`;
+  return { html, nonce };
 }
 const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,"http://localhost");
   if(req.method==="GET" && url.pathname===base){
     const cap=url.searchParams.get("bridge");
     if(cap && /^[A-Za-z0-9_-]{43}$/.test(cap)) {
-      const page=Buffer.from(bridgeHtml(cap));
-      res.writeHead(200,{"content-type":"text/html; charset=utf-8","content-length":page.length,"cache-control":"no-store","content-security-policy":`default-src 'none'; script-src 'nonce-${pageNoncePlaceholder()}' 'unsafe-inline'; connect-src 'self'; frame-ancestors http://127.0.0.1:*; base-uri 'none'; form-action 'none'`,"x-content-type-options":"nosniff"});
+      const rendered=bridgeHtml(cap); const page=Buffer.from(rendered.html);
+      res.writeHead(200,{"content-type":"text/html; charset=utf-8","content-length":page.length,"cache-control":"no-store","content-security-policy":`default-src 'none'; script-src 'nonce-${rendered.nonce}'; connect-src 'self'; frame-ancestors http://127.0.0.1:*; base-uri 'none'; form-action 'none'`,"x-content-type-options":"nosniff"});
       res.end(page);
     } else { res.writeHead(200,{"content-type":"text/html; charset=utf-8","cache-control":"no-store"});res.end("<!doctype html><title>Welcome</title><p>Website</p>"); }
     return;
@@ -209,6 +210,5 @@ const server=http.createServer(async(req,res)=>{
   if(req.method==="POST"&&url.pathname===endpoint("api/v1/close")){closeSession(s.id);return json(res,200,{ok:true});}
   json(res,404,{error:"not found"});
 });
-function pageNoncePlaceholder(){return "invalid";}
 server.listen(port,listenHost,()=>console.log(`relay listening on ${listenHost}:${port}; backend ${backendHost}:${backendPort}`));
 process.on("SIGTERM",()=>{server.close();for(const id of sessions.keys())closeSession(id);});
