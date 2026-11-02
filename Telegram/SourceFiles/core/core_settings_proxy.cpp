@@ -147,6 +147,7 @@ QByteArray SettingsProxy::serialize() const {
 	for (const auto index : _proxyRotationPreferredIndices) {
 		stream << qint32(index);
 	}
+	stream << qint32(_tgWsProxyEnabled ? 1 : 0);
 	return std::move(stream).result();
 }
 
@@ -248,6 +249,14 @@ bool SettingsProxy::setFromSerialized(const QByteArray &serialized) {
 		}
 	}
 	setProxyRotationPreferredIndices(std::move(preferredIndices));
+	if (!stream.atEnd()) {
+		auto tgWsProxyEnabled = qint32(0);
+		stream >> tgWsProxyEnabled;
+		if (!stream.ok()) {
+			return false;
+		}
+		_tgWsProxyEnabled = (tgWsProxyEnabled == 1);
+	}
 
 	return true;
 }
@@ -312,6 +321,15 @@ bool SettingsProxy::useProxyForCalls() const {
 
 void SettingsProxy::setUseProxyForCalls(bool value) {
 	_useProxyForCalls = value;
+}
+
+
+bool SettingsProxy::tgWsProxyEnabled() const {
+	return _tgWsProxyEnabled;
+}
+
+void SettingsProxy::setTgWsProxyEnabled(bool value) {
+	_tgWsProxyEnabled = value;
 }
 
 bool SettingsProxy::proxyRotationEnabled() const {
