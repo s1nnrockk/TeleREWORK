@@ -139,7 +139,12 @@ ReactionFlyAnimation::ReactionFlyAnimation(
 	resolve(_effect, aroundAnimation, size * 2);
 	if (!args.flyIcon.isNull()) {
 		_flyIcon = std::move(args.flyIcon);
-		_fly.start(flyCallback(), 0., 1., kFlyDuration);
+		_fly.start(
+			flyCallback(),
+			0.,
+			1.,
+			kFlyDuration,
+			anim::easeOutCubic);
 	} else if (!_center && !_effect && _miniCopies.empty()) {
 		return;
 	} else {
@@ -302,19 +307,20 @@ void ReactionFlyAnimation::paintMiniCopies(
 			continue;
 		}
 		const auto value = progress / mini.duration;
+		const auto travel = anim::easeOutCubic(1., value);
 		context.scale = (progress < scaleIn)
 			? (mini.maxScale * progress / scaleIn)
 			: (progress <= mini.duration - scaleOut)
 			? mini.maxScale
 			: (mini.maxScale * (mini.duration - progress) / scaleOut);
 		context.position = middle + QPoint(
-			anim::interpolate(0, mini.finalX, value),
+			anim::interpolate(0, mini.finalX, travel),
 			computeParabolicTop(
 				mini.cached,
 				0,
 				mini.finalY,
 				mini.flyUp,
-				value));
+				travel));
 		_custom->paint(p, context);
 	}
 }
