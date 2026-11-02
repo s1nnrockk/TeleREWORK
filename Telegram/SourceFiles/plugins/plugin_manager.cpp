@@ -7,6 +7,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "plugins/plugin_manager.h"
 
+#include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
 #include <QtCore/QFile>
 #include <QtCore/QJsonArray>
@@ -44,7 +45,7 @@ constexpr auto kMaxActions = 32;
 	return allowed.contains(permission);
 }
 
-[[nodiscard]] bool ValidAction(const QJsonObject &action) {
+[[nodiscard]] bool ValidAction(const QJsonObject &action, const QStringList &permissions) {
 	const auto type = action.value(u"type"_q).toString();
 	const auto id = action.value(u"id"_q).toString();
 	const auto label = action.value(u"label"_q).toString();
@@ -53,18 +54,23 @@ constexpr auto kMaxActions = 32;
 	}
 	if (type == u"open_url"_q) {
 		const auto url = QUrl(action.value(u"url"_q).toString());
-		return url.isValid()
+		return permissions.contains(u"open_url"_q)
+			&& url.isValid()
 			&& url.scheme() == u"https"_q
 			&& !url.host().isEmpty();
 	} else if (type == u"copy_text"_q
 		|| type == u"insert_text_template"_q) {
 		const auto text = action.value(u"text"_q).toString();
-		return !text.isEmpty() && text.size() <= 4000;
+		return !text.isEmpty()
+			&& text.size() <= 4000
+			&& (type != u"copy_text"_q
+				|| permissions.contains(u"clipboard.write"_q));
 	} else if (type == u"theme_token"_q) {
 		const auto token = action.value(u"token"_q).toString();
-		return QStringList{
-			u"glass"_q, u"dark"_q, u"light"_q, u"blue"_q, u"violet"_q
-		}.contains(token);
+		return permissions.contains(u"theme.apply"_q)
+			&& QStringList{
+				u"glass"_q, u"dark"_q, u"light"_q, u"blue"_q, u"violet"_q
+			}.contains(token);
 	}
 	return false;
 }
@@ -95,7 +101,13 @@ constexpr auto kMaxActions = 32;
 		return { false, u"Plugin must contain between 1 and 32 actions."_q };
 	}
 	for (const auto &value : actions) {
-		if (!value.isObject() || !ValidAction(value.toObject())) {
+		if (!value.isObject() || !ValidAction(value.toObject(), [&] {
+			auto result = QStringList();
+			for (const auto &permission : permissions) {
+				result.push_back(permission.toString());
+			}
+			return result;
+		}())) {
 			return { false, u"Plugin contains an unsupported or invalid action."_q };
 		}
 	}
@@ -175,6 +187,28 @@ Result Export(const QString &id, const QString &path) {
 		return { false, u"Could not export the plugin file."_q };
 	}
 	return { true, u"Plugin exported."_q, id };
+}
+
+bool IsEnabled(const QString &id) {
+	if (!SafeId(id) || !QFile::exists(PackagePath(id))) {
+		return false;
+	}
+	QFile state(Directory() + '/' + id + ".enabled");
+	if (!state.open(QIODevice::ReadOnly)) {
+		return false;
+	}
+	return state.readAll() == QByteArray("1");
+}
+
+Result Remove(const QString &id) {
+	if (!SafeId(id)) {
+		return { false, u"Invalid plugin identifier."_q };
+	}
+	if (!QFile::remove(PackagePath(id))) {
+		return { false, u"Could not remove the plugin package."_q };
+	}
+	QFile::remove(Directory() + '/' + id + ".enabled");
+	return { true, u"Plugin removed."_q, id };
 }
 
 Result SetEnabled(const QString &id, bool enabled) {
