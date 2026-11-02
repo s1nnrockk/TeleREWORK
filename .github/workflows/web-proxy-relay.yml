@@ -1,0 +1,23 @@
+name: WEB proxy relay checks
+on:
+  push:
+    branches: [fix/russia-connectivity]
+    paths:
+      - "tproxy-server/**"
+      - ".github/workflows/web-proxy-relay.yml"
+  pull_request:
+    paths:
+      - "tproxy-server/**"
+      - ".github/workflows/web-proxy-relay.yml"
+jobs:
+  relay-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
+        working-directory: tproxy-server
+      - run: node --check server.js
+        working-directory: tproxy-server
