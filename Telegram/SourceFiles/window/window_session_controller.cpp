@@ -3564,6 +3564,46 @@ void SessionController::openPhoto(
 		not_null<PhotoData*> photo,
 		MessageContext message,
 		const Data::StoriesContext *stories) {
+
+	const auto item = session().data().message(message.id);
+	if (openSharedStory(item) || openFakeItemStory(message.id, stories)) {
+		return;
+	}
+	const auto origin = item
+		? Data::FileOrigin(item->fullId())
+		: Data::FileOrigin();
+	if (openPhotoExternal(photo, origin, item)) {
+		return;
+	}
+	_window->openInMediaView(Media::View::OpenRequest(
+		this,
+		photo,
+		item,
+		message.topicRootId,
+		message.monoforumPeerId,
+		message.showDrawButton));
+}
+
+void SessionController::openPhoto(
+		not_null<PhotoData*> photo,
+		not_null<PeerData*> peer) {
+	const auto origin = peer->isUser()
+		? Data::FileOrigin(Data::FileOriginUserPhoto(
+			peerToUser(peer->id),
+			photo->id))
+		: Data::FileOrigin(Data::FileOriginPeerPhoto(peer->id));
+	if (openPhotoExternal(photo, origin, nullptr)) {
+		return;
+	}
+	_window->openInMediaView(Media::View::OpenRequest(this, photo, peer));
+}
+
+void SessionController::openDocument(
+		not_null<DocumentData*> document,
+		bool showInMediaView,
+		MessageContext message,
+		const Data::StoriesContext *stories,
+		std::optional<TimeId> videoTimestampOverride) {
 	if (document->filename().endsWith(u".tcfg"_q, Qt::CaseInsensitive)) {
 		auto path = document->filepath();
 		if (path.isEmpty() && document->loadedInMediaCache()) {
@@ -3622,45 +3662,6 @@ void SessionController::openPhoto(
 			return;
 		}
 	}
-	const auto item = session().data().message(message.id);
-	if (openSharedStory(item) || openFakeItemStory(message.id, stories)) {
-		return;
-	}
-	const auto origin = item
-		? Data::FileOrigin(item->fullId())
-		: Data::FileOrigin();
-	if (openPhotoExternal(photo, origin, item)) {
-		return;
-	}
-	_window->openInMediaView(Media::View::OpenRequest(
-		this,
-		photo,
-		item,
-		message.topicRootId,
-		message.monoforumPeerId,
-		message.showDrawButton));
-}
-
-void SessionController::openPhoto(
-		not_null<PhotoData*> photo,
-		not_null<PeerData*> peer) {
-	const auto origin = peer->isUser()
-		? Data::FileOrigin(Data::FileOriginUserPhoto(
-			peerToUser(peer->id),
-			photo->id))
-		: Data::FileOrigin(Data::FileOriginPeerPhoto(peer->id));
-	if (openPhotoExternal(photo, origin, nullptr)) {
-		return;
-	}
-	_window->openInMediaView(Media::View::OpenRequest(this, photo, peer));
-}
-
-void SessionController::openDocument(
-		not_null<DocumentData*> document,
-		bool showInMediaView,
-		MessageContext message,
-		const Data::StoriesContext *stories,
-		std::optional<TimeId> videoTimestampOverride) {
 	const auto item = session().data().message(message.id);
 	if (openSharedStory(item) || openFakeItemStory(message.id, stories)) {
 		return;
