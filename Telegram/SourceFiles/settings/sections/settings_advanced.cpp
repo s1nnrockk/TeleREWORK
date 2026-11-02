@@ -1331,6 +1331,8 @@ constexpr auto kTeleReworkConfigMaxBytes = 16 * 1024 * 1024;
 		|| !stream.atEnd()
 		|| magic != QByteArray(kTeleReworkConfigMagic)
 		|| formatVersion != kTeleReworkConfigVersion
+		|| version <= 0
+		|| version > AppVersion
 		|| data.isEmpty()
 		|| data.size() > kTeleReworkConfigMaxBytes
 		|| checksum != QCryptographicHash::hash(
