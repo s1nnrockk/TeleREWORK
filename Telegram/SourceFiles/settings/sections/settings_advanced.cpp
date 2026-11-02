@@ -1568,8 +1568,25 @@ void BuildPluginCenterSection(SectionBuilder &builder) {
 						}));
 						return;
 					}
-					const auto installed = Plugins::Install(
-						file.read(256 * 1024 + 1));
+					const auto bytes = file.read(256 * 1024 + 1);
+					const auto checked = Plugins::Validate(bytes);
+					if (!checked.ok) {
+						controller->show(Ui::MakeInformBox({
+							.text = checked.message,
+							.title = u"Plugin import failed"_q,
+						}));
+					return;
+					}
+					if (Plugins::InstalledIds().contains(checked.id)
+						&& QMessageBox::warning(
+							Core::App().getFileDialogParent(),
+							u"Replace installed plugin?"_q,
+							u"A plugin with this ID is already installed. Replace its package? The enabled state will be preserved."_q,
+						QMessageBox::Yes | QMessageBox::No,
+						QMessageBox::No) != QMessageBox::Yes) {
+						return;
+					}
+					const auto installed = Plugins::Install(bytes);
 					controller->show(Ui::MakeInformBox({
 						.text = installed.message,
 						.title = installed.ok
