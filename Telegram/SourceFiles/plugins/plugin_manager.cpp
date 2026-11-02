@@ -10,6 +10,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
 #include <QtCore/QFile>
+#include <QtCore/QFileInfo>
 #include <QtCore/QJsonArray>
 #include <QtCore/QJsonDocument>
 #include <QtCore/QRegularExpression>
@@ -275,7 +276,11 @@ Result Export(const QString &id, const QString &path) {
 	if (!checked.ok || checked.id != id) {
 		return { false, u"Installed plugin failed validation."_q };
 	}
-	auto target = QSaveFile(path);
+	auto exportPath = path;
+	if (QFileInfo(exportPath).suffix().compare(u"tplugin"_q, Qt::CaseInsensitive) != 0) {
+		exportPath += u".tplugin"_q;
+	}
+	auto target = QSaveFile(exportPath);
 	if (!target.open(QIODevice::WriteOnly)
 		|| target.write(bytes) != bytes.size()
 		|| !target.commit()) {
