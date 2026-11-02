@@ -42,4 +42,10 @@ void GenerateWithAI(
 	const QString &prompt,
 	std::function<void(Result)> done);
 
+// Rewrites selected chat text with the same hosted AI service used by AI Studio.
+void RewriteTextWithAI(
+	const QString &text,
+	const QString &instruction,
+	std::function<void(Result)> done);
+
 } // namespace Plugins
