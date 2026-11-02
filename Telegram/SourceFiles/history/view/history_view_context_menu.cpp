@@ -1870,7 +1870,6 @@ void FillContextMenuItems(
 				crl::guard(controller, [=](Plugins::Result rewritten) {
 					if (rewritten.ok) {
 					list->insertTextAtCursor(rewritten.message);
-					Ui::Toast::Show(u"AI text inserted into the message field. Review it before sending."_q);
 				} else {
 					controller->show(Ui::MakeInformBox({
 						.text = rewritten.message,
