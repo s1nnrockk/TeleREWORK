@@ -304,43 +304,64 @@ Result SetEnabled(const QString &id, bool enabled) {
 		return { false, u"Could not update plugin state."_q };
 	}
 	return { true, enabled
-		? u"Plugin enabled in the manager. Runtime actions are not yet exposed."_q
+		? u"Plugin enabled. You can now run its supported actions from Plugin Center."_q
 		: u"Plugin disabled."_q, id };
 }
 
-void GenerateWithLocalAI(const QString &prompt, std::function<void(Result)> done) {
+void GenerateWithAI(const QString &prompt, std::function<void(Result)> done) {
 	if (prompt.trimmed().isEmpty() || prompt.size() > 8000) {
 		done({ false, u"Describe the plugin in 1–8000 characters."_q });
 		return;
 	}
 	static auto manager = new QNetworkAccessManager(QCoreApplication::instance());
-	auto request = QNetworkRequest(QUrl(u"http://127.0.0.1:11434/api/generate"_q));
+	auto request = QNetworkRequest(QUrl(u"https://api.llm7.io/v1/chat/completions"_q));
 	request.setHeader(QNetworkRequest::ContentTypeHeader, u"application/json"_q);
-	const auto instructions = u"You generate TeleREWORK plugin JSON only. Return one JSON object matching schema telerework.plugin version 1. schema_version=1. Allowed actions only: open_url (https URL), copy_text (text), insert_text_template (text), theme_token (token glass/dark/light/blue/violet). open_url requires permission open_url. copy_text and insert_text_template require permission clipboard.write. theme_token requires permission theme.apply. permissions may only contain open_url, clipboard.write, theme.apply. Never include code, scripts, shell commands, network calls or file access. Every action needs id, type, label. Include id, name, version, description, author, permissions, actions. User request: "_q + prompt;
+	request.setRawHeader("User-Agent", "TeleREWORK/PluginStudio");
+	const auto system = u"You create safe TeleREWORK plugin manifests. Return ONLY one JSON object matching schema telerework.plugin, schema_version 1. Required fields: id, name, version, description, author, permissions, actions. Allowed actions: open_url with HTTPS url; copy_text with text; insert_text_template with text; theme_token with token glass/dark/light/blue/violet. open_url requires permission open_url. copy_text and insert_text_template require clipboard.write. theme_token requires theme.apply. Permissions may only be open_url, clipboard.write, theme.apply. Each action needs id, type, label. Never include scripts, source code, shell commands, network calls, file access, credentials, or private Telegram data. Keep the manifest small and valid."_q;
+	const auto messages = QJsonArray{
+		QJsonObject{ { u"role"_q, u"system"_q }, { u"content"_q, system } },
+		QJsonObject{ { u"role"_q, u"user"_q }, { u"content"_q, prompt } },
+	};
 	const auto body = QJsonDocument(QJsonObject{
-		{ u"model"_q, u"qwen2.5-coder:3b"_q },
-		{ u"prompt"_q, instructions },
-		{ u"stream"_q, false },
-		{ u"format"_q, u"json"_q },
+		{ u"model"_q, u"gpt-oss:20b"_q },
+		{ u"messages"_q, messages },
+		{ u"temperature"_q, 0.1 },
+		{ u"max_tokens"_q, 2200 },
 	}).toJson(QJsonDocument::Compact);
 	auto reply = manager->post(request, body);
 	QObject::connect(reply, &QNetworkReply::finished, [reply, done = std::move(done)]() mutable {
 		const auto response = reply->readAll();
 		const auto networkError = reply->error();
 		const auto errorText = reply->errorString();
+		const auto status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
 		reply->deleteLater();
-		if (networkError != QNetworkReply::NoError) {
-			done({ false, u"Local AI is unavailable. Install and start Ollama, then run: ollama pull qwen2.5-coder:3b. Details: "_q + errorText });
+		if (networkError != QNetworkReply::NoError || status < 200 || status >= 300) {
+			done({ false, u"Free cloud AI is temporarily unavailable or rate-limited. Try again later. Network: "_q + errorText + u" (HTTP "_q + QString::number(status) + u")."_q });
 			return;
 		}
 		QJsonParseError parseError;
 		const auto envelope = QJsonDocument::fromJson(response, &parseError);
 		if (parseError.error != QJsonParseError::NoError || !envelope.isObject()) {
-			done({ false, u"Local AI returned an invalid response."_q });
+			done({ false, u"Cloud AI returned an invalid response."_q });
 			return;
 		}
-		const auto generated = envelope.object().value(u"response"_q).toString().toUtf8();
-		const auto installed = Install(generated);
+		const auto choices = envelope.object().value(u"choices"_q).toArray();
+		if (choices.isEmpty() || !choices.front().isObject()) {
+			done({ false, u"Cloud AI returned no generated plugin. The free service may be busy."_q });
+			return;
+		}
+		const auto generated = choices.front().toObject()
+			.value(u"message"_q).toObject()
+			.value(u"content"_q).toString().trimmed().toUtf8();
+		const auto checked = Validate(generated);
+		if (!checked.ok) {
+			done({ false, u"AI output failed plugin validation: "_q + checked.message });
+			return;
+		}
+		auto installed = Install(generated);
+		if (installed.ok) {
+			installed.message = u"Plugin generated by free cloud AI and installed disabled. Review its permissions before enabling."_q;
+		}
 		done(installed);
 	});
 }
