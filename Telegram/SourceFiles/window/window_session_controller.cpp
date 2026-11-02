@@ -133,6 +133,10 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "styles/style_dialogs.h"
 #include "styles/style_layers.h" // st::boxLabel
 
+#include <QtCore/QCryptographicHash>
+#include <QtCore/QDataStream>
+#include <QtCore/QFile>
+
 namespace Window {
 namespace {
 
