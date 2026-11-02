@@ -97,7 +97,12 @@ private:
 			: fromX(fromX)
 			, toX(toX)
 			, y(y) {
-			x.start(updateCallback, fromX, toX, duration);
+			x.start(
+				updateCallback,
+				fromX,
+				toX,
+				duration,
+				anim::easeOutQuint);
 		}
 		Ui::Animations::Simple x;
 		int fromX, toX;
