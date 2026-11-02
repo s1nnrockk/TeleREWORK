@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080b13">
+<title>TeleREWORK — Telegram по-новому</title>
+<style>
+:root{color-scheme:dark;--bg:#080b13;--text:#f4f5ff;--muted:#9ba5bf;--line:rgba(255,255,255,.1);--glass:rgba(255,255,255,.065);--purple:#987cff}
+*{box-sizing:border-box}
+html{scroll-behavior:auto;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+.app{min-height:100vh;position:relative;isolation:isolate;background:radial-gradient(ellipse at 70% -15%,rgba(127,91,255,.2),transparent 42%),radial-gradient(ellipse at 0% 55%,rgba(50,135,255,.12),transparent 34%),var(--bg)}
+.wrap{width:min(1120px,calc(100% - 44px));margin:auto;position:relative;z-index:1}
+header{height:82px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px;font-size:18px;font-weight:800;letter-spacing:-.04em}
+.logo{width:37px;height:37px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(145deg,#b49aff,#6953dc 65%,#438de8);box-shadow:0 8px 30px #795eff55}
+.logo svg{width:22px;height:22px}
+.nav{display:flex;align-items:center;gap:28px;color:#b1bad0;font-size:13px}
+.nav a{transition:color .2s ease}
+.nav a:hover{color:white}
+.nav .github{border:1px solid var(--line);border-radius:999px;padding:10px 15px;color:#f1f2ff}
+.hero{text-align:center;padding:104px 0 76px}
+.eyebrow{display:inline-flex;gap:9px;align-items:center;border:1px solid #a18aff44;background:#9175ff14;color:#c9bbff;border-radius:999px;padding:8px 13px;font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.dot{width:7px;height:7px;border-radius:50%;background:#a58bff;box-shadow:0 0 14px #a58bff}
+h1{font-size:clamp(48px,8vw,86px);line-height:.98;letter-spacing:-.075em;margin:28px 0 20px}
+.gradient{background:linear-gradient(100deg,#fff 5%,#cbbcff 48%,#82c3ff 95%);color:transparent;background-clip:text}
+.sub{max-width:650px;margin:0 auto;color:#a9b2c9;line-height:1.75;font-size:16px}
+.download{width:min(660px,100%);margin:40px auto 0;padding:22px;border-radius:26px;border:1px solid rgba(255,255,255,.15);background:linear-gradient(145deg,rgba(255,255,255,.11),rgba(255,255,255,.035));box-shadow:0 24px 90px #0006,inset 0 1px #ffffff20;backdrop-filter:blur(24px);text-align:left}
+.platform{display:flex;align-items:center;gap:13px;margin-bottom:18px}
+.win{width:46px;height:46px;border-radius:14px;background:#5b97ff24;color:#8dbaff;display:grid;place-items:center}
+.win svg{width:26px;height:26px}
+.platform strong{display:block;font-size:15px}.platform small{display:block;margin-top:4px;color:#8e99b3;font-size:12px}
+.download-btn{width:100%;height:56px;border:0;border-radius:16px;display:flex;align-items:center;justify-content:center;gap:10px;color:white;font-weight:750;font-size:14px;background:linear-gradient(100deg,#8b6cff,#5b7dff);opacity:.7;cursor:not-allowed}
+.download-btn svg{width:18px;height:18px}
+.under{margin-top:13px;color:#77829d;font-size:11px;display:flex;justify-content:space-between;gap:12px}
+.under a,footer a{color:#b6a7ff}
+.section{padding:58px 0 92px;scroll-margin-top:24px}
+.section-head{text-align:center;margin-bottom:30px}
+.kicker{color:#a994ff;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:750}
+h2{font-size:clamp(27px,4vw,36px);letter-spacing:-.055em;margin:11px 0}
+.section-head p{color:#919bb4;font-size:14px}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
+.feature{min-height:175px;padding:23px;border-radius:21px;border:1px solid var(--line);background:var(--glass);transition:transform .3s cubic-bezier(.2,.8,.2,1),border-color .3s,background .3s}
+.feature:hover{transform:translateY(-5px);border-color:#a58aff66;background:#ffffff0d}
+.feature-icon{width:38px;height:38px;border-radius:13px;background:#987cff22;color:#c0adff;display:grid;place-items:center;margin-bottom:18px}
+.feature-icon svg{width:19px;height:19px}
+.feature h3{font-size:14px;margin:0 0 8px}.feature p{font-size:12px;line-height:1.7;color:#929db6;margin:0}
+footer{border-top:1px solid var(--line);padding:25px 0 35px;display:flex;justify-content:space-between;gap:20px;color:#707b95;font-size:11px}
+@media(max-width:700px){.wrap{width:calc(100% - 30px)}header{height:70px}.nav{gap:15px}.hero{padding:75px 0 52px}.sub{font-size:14px}.download{padding:17px}.features{grid-template-columns:1fr}.feature{min-height:auto}footer{flex-direction:column}.under{flex-direction:column}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="app" id="top">
+<div class="wrap">
+<header>
+<a class="brand" href="#top" aria-label="TeleREWORK — наверх"><span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6.5 20 3l-3.2 17-5.1-5.2-3 2.8.7-5.1L18 5.3 7.1 11.5 4 6.5Z" fill="white"/></svg></span>TeleREWORK</a>
+<nav class="nav"><a href="#features">Возможности</a><a class="github" href="https://github.com/s1nnrockk/TeleREWORK" target="_blank" rel="noreferrer">GitHub ↗</a></nav>
+</header>
+<main>
+<section class="hero">
+<div class="eyebrow"><span class="dot"></span> Новый взгляд на Telegram Desktop</div>
+<h1><span class="gradient">Telegram.</span><br>По-новому.</h1>
+<p class="sub">TeleREWORK — переосмысленный Telegram Desktop с обновлённым интерфейсом, плавными анимациями и дополнительными настройками.</p>
+<div class="download">
+<div class="platform"><span class="win"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.2 10.8 4v7.6H3V5.2Zm8.8-1.4L21 2.5v9.1h-9.2V3.8ZM3 12.9h7.8v7.6L3 19.3v-6.4Zm8.8 0H21v9.1l-9.2-1.3v-7.8Z"/></svg></span><span><strong>TeleREWORK для Windows</strong><small>x64 · Windows 10/11</small></span></div>
+<button class="download-btn" type="button" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v3h16v-3"/></svg>Скоро будет доступно</button>
+<div class="under"><span>Загрузка появится здесь.</span><a href="https://github.com/s1nnrockk/TeleREWORK" target="_blank" rel="noreferrer">Исходный код ↗</a></div>
+</div>
+</section>
+<section class="section" id="features">
+<div class="section-head"><div class="kicker">Что внутри</div><h2>Знакомый Telegram. Другие ощущения.</h2><p>Акцент на удобстве, внешнем виде и настройке под себя.</p></div>
+<div class="features">
+<article class="feature"><div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8m0-12.8L5.6 18.4"/></svg></div><h3>Liquid Glass</h3><p>Стеклянные поверхности, глубина интерфейса и аккуратные визуальные эффекты.</p></article>
+<article class="feature"><div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h10M4 17h13"/><circle cx="18" cy="12" r="2"/></svg></div><h3>Конфиги .tcfg</h3><p>Сохраняй настройки в конфиги и делись собственными вариантами оформления.</p></article>
+<article class="feature"><div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12a8 8 0 1 0 2.3-5.6L4 8.5"/><path d="M4 4v4.5h4.5M12 7v5l3 2"/></svg></div><h3>Плавные анимации</h3><p>Переходы и микровзаимодействия, которые делают интерфейс живым.</p></article>
+</div>
+</section>
+</main>
+<footer><span>© 2026 TeleREWORK · Неофициальный проект на базе Telegram Desktop.</span><a href="https://github.com/s1nnrockk/TeleREWORK" target="_blank" rel="noreferrer">Исходный код на GitHub ↗</a></footer>
+</div>
+</div>
+<script>
+(() => {
+  let frame = 0;
+  let cancelByUser = false;
+  const stop = () => { if (frame) cancelAnimationFrame(frame); frame = 0; };
+  ['wheel','touchstart','pointerdown','keydown'].forEach(type => {
+    window.addEventListener(type, event => {
+      if (type === 'keydown' && !['ArrowDown','ArrowUp','PageDown','PageUp','Home','End',' '].includes(event.key)) return;
+      cancelByUser = true;
+      stop();
+    }, {passive:true,capture:true});
+  });
+  document.addEventListener('click', event => {
+    const link = event.target.closest('a[href^="#"]');
+    if (!link) return;
+    const id = decodeURIComponent(link.getAttribute('href').slice(1));
+    const target = document.getElementById(id);
+    if (!target) return;
+    event.preventDefault();
+    stop();
+    cancelByUser = false;
+    const from = window.scrollY;
+    const to = Math.max(0, target.getBoundingClientRect().top + from - 22);
+    const distance = to - from;
+    const duration = Math.min(1450, Math.max(850, Math.abs(distance) * 0.9));
+    const started = performance.now();
+    const easeInOutQuint = t => t < .5 ? 16*t*t*t*t*t : 1 - Math.pow(-2*t+2,5)/2;
+    const tick = now => {
+      if (cancelByUser) return;
+      const t = Math.min(1, (now-started)/duration);
+      window.scrollTo(0, from + distance*easeInOutQuint(t));
+      if (t < 1) frame = requestAnimationFrame(tick);
+      else frame = 0;
+    };
+    frame = requestAnimationFrame(tick);
+    history.replaceState(null, '', '#' + encodeURIComponent(id));
+  }, true);
+})();
+</script>
+</body>
+</html>
