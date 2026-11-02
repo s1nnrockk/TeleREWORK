@@ -403,7 +403,8 @@ void Item::setOver(bool over) {
 			_updateCallback,
 			_over ? 0. : 1.,
 			_over ? 1. : 0.,
-			_st.duration);
+			_st.duration,
+			anim::easeOutQuint);
 	}
 }
 
@@ -1049,7 +1050,12 @@ void MultiSelect::Inner::updateItemsGeometry() {
 	if (newHeight == _newHeight) return;
 
 	_newHeight = newHeight;
-	_height.start([this] { updateHeightStep(); }, height(), _newHeight, _st.item.duration);
+	_height.start(
+		[this] { updateHeightStep(); },
+		height(),
+		_newHeight,
+		_st.item.duration,
+		anim::easeOutQuint);
 }
 
 void MultiSelect::Inner::updateHeightStep() {
