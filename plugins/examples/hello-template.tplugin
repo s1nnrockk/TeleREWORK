@@ -1,0 +1,18 @@
+{
+  "schema": "telerework.plugin",
+  "schema_version": 1,
+  "id": "org.telerework.hello",
+  "name": "Hello Template",
+  "version": "1.0.0",
+  "description": "Copies a greeting to the clipboard when explicitly invoked.",
+  "author": "TeleREWORK",
+  "permissions": ["clipboard.write"],
+  "actions": [
+    {
+      "id": "hello-copy",
+      "type": "insert_text_template",
+      "label": "Copy hello message",
+      "text": "Привет! Рад(а) общению."
+    }
+  ]
+}
