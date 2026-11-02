@@ -1,6 +1,6 @@
 # TeleREWORK Plugins & AI Studio
 
-Status: architecture and format specification. This document does not claim that the runtime or UI is implemented.
+Status: first implementation committed to `fix/russia-connectivity`. The native manager, package validation, import/export, local AI generation and basic settings UI are present in source. GitHub Actions builds have not yet been confirmed successful.
 
 ## Product goal
 
@@ -27,7 +27,7 @@ Version 1 supports:
 - `open_url`: open a validated HTTPS URL after a user click.
 - `copy_text`: copy a bounded literal string after a user click.
 - `insert_text_template`: expose a user-invoked text template; never send a message automatically.
-- `theme_token`: apply a small allow-listed set of appearance tokens.
+- `theme_token`: schema-reserved allow-listed appearance token; execution is not enabled yet.
 - `chat_action`: only explicitly implemented host actions, with a confirmation step for any action that changes chat state.
 
 No plugin can read message history, contacts, authentication data, local files, or session keys by default. Future permissions must be narrow, visible, revocable and granted per plugin.
@@ -66,6 +66,18 @@ Store user-installed packages and enabled state under the application data direc
 - AI endpoint timeout, malformed JSON, offline and model-not-found cases.
 - Confirm that generated actions cannot execute arbitrary code or access private Telegram data.
 
-## Implementation boundary
+## Current implementation boundary
 
-This specification is the product contract for the upcoming native C++/Qt implementation. It is not evidence that Plugin Center, AI Studio, runtime execution, or import/export UI is already available in a compiled build.
+Implemented in source:
+- Native C++/Qt package validation, installation, storage and removal.
+- `.tplugin` import/export with atomic writes and a 256 KB package limit.
+- Enable/disable state stored separately from package contents.
+- Local Ollama generation using `qwen2.5-coder:3b`; generated JSON is validated and installed disabled.
+- Basic Advanced Settings UI for import, export, generation, plugin management and running supported actions.
+- User-invoked `open_url`, `copy_text` and `insert_text_template` actions. Text templates are copied to the clipboard for manual pasting.
+
+Not yet implemented:
+- A dedicated polished multi-tab Plugin Center window, marketplace/discovery, plugin settings UI and rich action previews.
+- Theme-token action execution and deeper Telegram host APIs/events.
+- Sandboxed third-party native/JavaScript plugins. Arbitrary executable code is intentionally unsupported.
+- Build verification. Check the GitHub Actions runs for the latest commit before distributing binaries.
