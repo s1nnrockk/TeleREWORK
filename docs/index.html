@@ -108,11 +108,11 @@ footer{border-top:1px solid var(--line);padding:25px 0 35px;display:flex;justify
     const distance = to - from;
     const duration = Math.min(1450, Math.max(850, Math.abs(distance) * 0.9));
     const started = performance.now();
-    const easeInOutQuint = t => t < .5 ? 16*t*t*t*t*t : 1 - Math.pow(-2*t+2,5)/2;
+    const easeInOutCubic = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
     const tick = now => {
       if (cancelByUser) return;
       const t = Math.min(1, (now-started)/duration);
-      window.scrollTo(0, from + distance*easeInOutQuint(t));
+      window.scrollTo(0, from + distance*easeInOutCubic(t));
       if (t < 1) frame = requestAnimationFrame(tick);
       else frame = 0;
     };
