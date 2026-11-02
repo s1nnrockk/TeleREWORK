@@ -1,6 +1,6 @@
 # TeleREWORK Plugins & AI Studio
 
-Status: first implementation committed to `fix/russia-connectivity`. The native manager, package validation, import/export, local AI generation and basic settings UI are present in source. GitHub Actions builds have not yet been confirmed successful.
+Status: first implementation committed to `fix/russia-connectivity`. The native manager, package validation, import/export, cloud AI generation and basic settings UI are present in source. GitHub Actions builds have not yet been confirmed successful.
 
 ## Product goal
 
@@ -8,9 +8,9 @@ A built-in Plugin Center where users can install, enable, disable, configure, im
 
 ## Free AI strategy
 
-The default provider is a local Ollama-compatible HTTP endpoint at `http://127.0.0.1:11434`. It requires no API key and has no per-request service fee; the user supplies the locally installed model and the computer supplies the compute. The app must detect an unavailable local provider and explain that generation is unavailable until a local model server is running.
+The default provider is the hosted LLM7.io OpenAI-compatible endpoint `https://api.llm7.io/v1/chat/completions`, using its anonymous free-access route and the `gpt-oss:20b` model. No Ollama installation, local model download, account, or user API key is required. Anonymous access is rate-limited and capacity may change without notice; generation can fail when the upstream is busy or its free quota is exhausted. This is a third-party service, so plugin prompts are transmitted to that provider. The UI warns users not to include private chats, passwords, authentication data, or personal information.
 
-Do not ship a shared API key, embed a paid provider credential, or silently proxy user prompts through a third party. Optional remote providers may be added only as explicit user-configured endpoints with clear privacy and cost notices. No public anonymous inference endpoint is treated as a guaranteed free production API.
+Do not embed shared secret keys or paid credentials. Never claim that anonymous free capacity is unlimited or guaranteed. Keep the provider endpoint and model isolated in one function so they can be replaced if the service changes.
 
 ## Plugin package format
 
@@ -35,7 +35,7 @@ No plugin can read message history, contacts, authentication data, local files, 
 ## AI generation flow
 
 1. User describes the plugin in one prompt.
-2. AI Studio sends only that prompt and the versioned schema to the configured local model endpoint.
+2. AI Studio sends only that prompt and the versioned schema to the free hosted AI endpoint.
 3. The model returns one JSON package, not executable source code.
 4. The app parses and validates the result locally; invalid output is rejected with actionable validation errors.
 5. The user sees the manifest, requested permissions and preview.
@@ -49,7 +49,7 @@ AI output is untrusted input. It must never be installed or executed merely beca
 - Plugin cards with icon, name, version, description, enabled state and permissions.
 - Enable/disable, settings, uninstall, import and export actions.
 - AI Studio prompt editor, model/provider status, generate, validation report, preview and export.
-- Clear offline state when the local model server is unavailable.
+- Clear offline state when the cloud provider is unavailable or rate-limited.
 
 ## Storage and migration
 
@@ -72,7 +72,7 @@ Implemented in source:
 - Native C++/Qt package validation, installation, storage and removal.
 - `.tplugin` import/export with atomic writes and a 256 KB package limit.
 - Enable/disable state stored separately from package contents.
-- Local Ollama generation using `qwen2.5-coder:3b`; generated JSON is validated and installed disabled.
+- Anonymous cloud generation through LLM7.io (`gpt-oss:20b`); no user key or local model is required. Generated JSON is validated and installed disabled.
 - Basic Advanced Settings UI for import, export, generation, plugin management and running supported actions.
 - User-invoked `open_url`, `copy_text` and `insert_text_template` actions. Text templates are copied to the clipboard for manual pasting.
 
