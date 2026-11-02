@@ -219,7 +219,7 @@ void ContinuousSlider::setOver(bool over) {
 		from,
 		to,
 		getOverDuration(),
-		anim::easeOutCubic);
+		anim::easeOutQuint);
 }
 
 FilledSlider::FilledSlider(QWidget *parent, const style::FilledSlider &st) : ContinuousSlider(parent)
