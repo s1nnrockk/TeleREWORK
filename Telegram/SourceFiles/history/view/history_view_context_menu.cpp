@@ -1790,6 +1790,80 @@ void FillContextMenuItems(
 	const auto hasWhoReactedItem = item
 		&& Api::WhoReactedExists(item, Api::WhoReactedList::All);
 
+	if (item && !request.overSelection && request.selectedItems.empty()) {
+		const auto controller = list->controller();
+		const auto messageText = HistoryItemText(item).text;
+		if (!messageText.trimmed().isEmpty()
+			&& !list->hasCopyRestriction(item)) {
+			result->addAction(u"Echo Chat: Draft a reply"_q, [=] {
+				if (QMessageBox::warning(
+						Core::App().getFileDialogParent(),
+						u"Echo Chat — Privacy notice"_q,
+						u"The selected message will be sent to LLM7.io to draft a reply. Do not include private or sensitive information. Continue?"_q,
+						QMessageBox::Yes | QMessageBox::No,
+						QMessageBox::No) != QMessageBox::Yes) {
+					return;
+				}
+				Plugins::RewriteTextWithAI(
+					messageText,
+					u"Write a natural, concise reply to this message. Reply in the same language. Return only the reply text."_q,
+					crl::guard(controller, [=](Plugins::Result drafted) {
+						if (drafted.ok) {
+							list->insertTextAtCursor(drafted.message);
+					} else {
+						controller->show(Ui::MakeInformBox({
+							.title = u"Echo Chat failed"_q,
+							.text = drafted.message,
+					}));
+					}
+				}));
+			}, &st::menuIconReply);
+		}
+		result->addAction(u"What I Missed: Summarize recent chat"_q, [=] {
+			const auto history = item->history();
+			const auto owner = &history->owner();
+			auto conversation = QString();
+			const auto newest = history->maxMsgId();
+			const auto oldest = history->minMsgId();
+			for (auto id = newest; id >= oldest && id > 0
+					&& conversation.size() < 12000
+					&& newest - id < 40; --id) {
+				if (const auto recent = owner->message(
+						FullMsgId(history->peer->id, id))) {
+					const auto text = HistoryItemText(recent).text.trimmed();
+					if (!text.isEmpty()) {
+						conversation.prepend(text + u"\n"_q);
+					}
+				}
+			}
+			if (conversation.trimmed().isEmpty()) {
+				controller->show(Ui::MakeInformBox({
+					.title = u"What I Missed"_q,
+					.text = u"No recent text messages are loaded to summarize."_q,
+				}));
+				return;
+			}
+			if (QMessageBox::warning(
+					Core::App().getFileDialogParent(),
+					u"What I Missed — Privacy notice"_q,
+					u"Recent chat messages will be sent to LLM7.io to create a summary. Continue?"_q,
+					QMessageBox::Yes | QMessageBox::No,
+					QMessageBox::No) != QMessageBox::Yes) {
+				return;
+			}
+			Plugins::RewriteTextWithAI(
+				conversation,
+				u"Summarize the key points, decisions, questions, and anything requiring a response from these recent chat messages. Be concise and use bullet points. Return only the summary."_q,
+				crl::guard(controller, [=](Plugins::Result summary) {
+					controller->show(Ui::MakeInformBox({
+						.title = u"What I Missed"_q,
+						.text = summary.ok
+							? summary.message
+							: summary.message,
+				}));
+				}));
+		}, &st::menuIconSearch);
+	}
 	AddReplyToMessageAction(result, request, list);
 	if (item) {
 		const auto media = item->media();
