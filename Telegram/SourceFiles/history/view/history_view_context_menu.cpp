@@ -1826,7 +1826,7 @@ void FillContextMenuItems(
 			const auto newest = history->maxMsgId();
 			const auto oldest = history->minMsgId();
 			for (auto id = newest; id >= oldest && id > 0
-					&& conversation.size() < 12000
+					&& conversation.size() < 6500
 					&& newest - id < 40; --id) {
 				if (const auto recent = owner->message(
 						FullMsgId(history->peer->id, id))) {
@@ -1857,9 +1857,7 @@ void FillContextMenuItems(
 				crl::guard(controller, [=](Plugins::Result summary) {
 					controller->show(Ui::MakeInformBox({
 						.title = u"What I Missed"_q,
-						.text = summary.ok
-							? summary.message
-							: summary.message,
+						.text = summary.message,
 				}));
 				}));
 		}, &st::menuIconSearch);
