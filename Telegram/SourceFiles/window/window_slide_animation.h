@@ -41,7 +41,7 @@ public:
 	void start();
 
 	static const anim::transition &transition() {
-		return anim::easeOutCirc;
+		return anim::easeOutQuint;
 	}
 
 private:
