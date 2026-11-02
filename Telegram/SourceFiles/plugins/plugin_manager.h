@@ -35,6 +35,6 @@ struct Result {
 // Uses a local Ollama-compatible endpoint. No API key or paid provider is used.
 void GenerateWithLocalAI(
 	const QString &prompt,
-	Fn<void(Result)> done);
+	std::function<void(Result)> done);
 
 } // namespace Plugins
