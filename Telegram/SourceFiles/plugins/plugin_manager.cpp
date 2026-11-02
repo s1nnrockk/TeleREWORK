@@ -228,7 +228,7 @@ Result SetEnabled(const QString &id, bool enabled) {
 		: u"Plugin disabled."_q, id };
 }
 
-void GenerateWithLocalAI(const QString &prompt, Fn<void(Result)> done) {
+void GenerateWithLocalAI(const QString &prompt, std::function<void(Result)> done) {
 	if (prompt.trimmed().isEmpty() || prompt.size() > 8000) {
 		done({ false, u"Describe the plugin in 1–8000 characters."_q });
 		return;
