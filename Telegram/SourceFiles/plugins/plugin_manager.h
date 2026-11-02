@@ -32,6 +32,8 @@ struct Result {
 [[nodiscard]] Result Remove(const QString &id);
 [[nodiscard]] QStringList InstalledIds();
 [[nodiscard]] QStringList EnabledIds();
+[[nodiscard]] QStringList CatalogNames();
+[[nodiscard]] Result InstallCatalog(const QString &name);
 [[nodiscard]] QStringList ActionLabels(const QString &id);
 [[nodiscard]] Result ExecuteAction(const QString &id, const QString &label);
 
