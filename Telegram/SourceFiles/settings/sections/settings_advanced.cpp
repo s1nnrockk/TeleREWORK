@@ -1629,7 +1629,7 @@ void BuildPluginCenterSection(SectionBuilder &builder) {
 			const auto prompt = QInputDialog::getMultiLineText(
 				Core::App().getFileDialogParent(),
 				u"TeleREWORK AI Studio"_q,
-				u"Describe the plugin you want to create:"_q,
+				u"Describe ONLY the TeleREWORK plugin you want to create:"_q,
 				QString(),
 				&accepted);
 			if (!accepted || prompt.trimmed().isEmpty()) {
