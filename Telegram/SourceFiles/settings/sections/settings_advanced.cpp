@@ -1701,6 +1701,58 @@ void BuildPluginCenterSection(SectionBuilder &builder) {
 		},
 		.keywords = { u"plugin"_q, u"enable"_q, u"disable"_q, u"remove"_q, u"manage"_q },
 	});
+
+	builder.addButton({
+		.id = u"advanced/plugins_run_action"_q,
+		.title = u"Run an enabled plugin action"_q,
+		.onClick = [=] {
+			const auto ids = Plugins::EnabledIds();
+			if (ids.isEmpty()) {
+				controller->show(Ui::MakeInformBox({
+					.text = u"Enable a plugin first. Imported and generated plugins are disabled until you enable them."_q,
+					.title = u"No enabled plugins"_q,
+				}));
+				return;
+			}
+			bool accepted = false;
+			const auto id = QInputDialog::getItem(
+				Core::App().getFileDialogParent(),
+				u"Run plugin"_q,
+				u"Choose an enabled plugin"_q,
+				ids,
+				0,
+				false,
+				&accepted);
+			if (!accepted || id.isEmpty()) {
+				return;
+			}
+			const auto actions = Plugins::ActionLabels(id);
+			if (actions.isEmpty()) {
+				controller->show(Ui::MakeInformBox({
+					.text = u"This plugin has no supported user-invoked actions."_q,
+					.title = u"No available actions"_q,
+				}));
+				return;
+			}
+			const auto label = QInputDialog::getItem(
+				Core::App().getFileDialogParent(),
+				u"Plugin actions"_q,
+				id,
+				actions,
+				0,
+				false,
+				&accepted);
+			if (!accepted || label.isEmpty()) {
+				return;
+			}
+			const auto result = Plugins::ExecuteAction(id, label);
+			controller->show(Ui::MakeInformBox({
+				.text = result.message,
+				.title = result.ok ? u"Plugin action complete"_q : u"Plugin action failed"_q,
+			}));
+		},
+		.keywords = { u"plugin"_q, u"run"_q, u"action"_q, u"execute"_q },
+	});
 	builder.addButton({
 		.id = u"advanced/plugins_installed"_q,
 		.title = u"Installed plugins"_q,
