@@ -31,11 +31,12 @@ Acceptance checks:
 
 ## 5. Quick Switcher
 
-Add a searchable chat switcher opened with `Ctrl+K` (and `Cmd+K` on macOS).
+Add a quick chat switcher opened with `Ctrl+K` (and `Cmd+K` on macOS). The first implementation reuses the existing recent-chat switch overlay; searchable filtering is a follow-up implementation task.
 
 Behavior:
 - Opens a compact centered overlay without navigating away from the current chat.
-- Search by chat title, username and phone/contact name using already-loaded local dialog data.
+- Current first slice: open the existing recent-chat switch overlay and cycle recent chats using its existing keyboard controls.
+- Follow-up: add an inline search field for chat title, username and phone/contact name using already-loaded local dialog data.
 - Show avatar, title, last-message preview and unread marker where available.
 - Keyboard: Up/Down changes selection, Enter opens, Esc closes.
 - Recent chats appear when the query is empty; matching results update as the user types.
@@ -44,7 +45,8 @@ Behavior:
 - Do not intercept the shortcut while the user is typing in a text editor/input where the shortcut is already owned by that control.
 
 Acceptance checks:
-- Works with keyboard only.
+- Current first slice works with the existing keyboard-only recent-chat switch flow.
+- Follow-up acceptance: searchable filtering, result preview and empty-state behavior.
 - Correctly handles empty results, deleted chats and multiple accounts.
 - Does not duplicate existing global search behavior or steal its shortcut unexpectedly.
 - Selection returns focus to the chat composer only after navigation completes.
