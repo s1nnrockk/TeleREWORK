@@ -39,6 +39,7 @@ const auto kChatSwitchSpecialKeys = std::array{
 	Qt::Key_Up,
 	Qt::Key_Down,
 	Qt::Key_Q,
+	Qt::Key_K,
 };
 Qt::Key ChatSwitchModifier/* = Qt::Key()*/;
 bool ChatSwitchStarted/* = false*/;
@@ -536,7 +537,6 @@ void Manager::fillDefaults() {
 	set(u"media next"_q              , Command::MediaNext);
 
 	set(u"ctrl+f"_q                  , Command::Search);
-	set(u"%1+k"_q.arg(ctrl)         , Command::Search);
 	set(u"search"_q                  , Command::Search);
 	set(u"find"_q                    , Command::Search);
 
@@ -980,7 +980,8 @@ bool HandlePossibleChatSwitch(not_null<QKeyEvent*> event) {
 			return false;
 		} else if (key == Qt::Key_Control || key == Qt::Key_Meta) {
 			ChatSwitchModifier = key;
-		} else if (key == Qt::Key_Tab || key == Qt::Key_Backtab) {
+		} else if (key == Qt::Key_Tab || key == Qt::Key_Backtab
+			|| key == Qt::Key_K) {
 			const auto modifiers = event->modifiers();
 			if (modifiers & ctrl) {
 				if (ChatSwitchModifier == Qt::Key()) {
@@ -990,7 +991,7 @@ bool HandlePossibleChatSwitch(not_null<QKeyEvent*> event) {
 				}
 				const auto action = (modifiers & Qt::ShiftModifier)
 					? Qt::Key_Backtab
-					: key;
+					: (key == Qt::Key_K ? Qt::Key_Tab : key);
 				if (Data.handles(modifiers | key)) {
 					return false;
 				} else if (action == Qt::Key_Tab
