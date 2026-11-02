@@ -379,13 +379,14 @@ void Application::run() {
 							local.type = MTP::ProxyData::Type::Mtproto;
 							local.host = u"127.0.0.1"_q;
 							local.port = 1443;
-							local.password = secret;
+							local.password = u"dd"_q + secret;
 							if (proxySettings.indexInList(local) < 0) {
 								proxySettings.addToList(local);
 							}
 							proxySettings.setSelected(local);
 							proxySettings.setSettings(
 								MTP::ProxyData::Settings::Enabled);
+							proxySettings.connectionTypeChangesNotify();
 							LOG(("TG WS Proxy: local MTProto listener is ready."));
 						} else {
 							LOG(("TG WS Proxy: local listener did not become ready."));
@@ -399,10 +400,16 @@ void Application::run() {
 					}
 				}
 			}
+			if (!_private->tgWsProxy && isLocalTgWs) {
+				proxySettings.removeFromList(selected);
+				proxySettings.setSelected(MTP::ProxyData());
+				proxySettings.setSettings(MTP::ProxyData::Settings::System);
+			}
 		} else if (isLocalTgWs) {
 			proxySettings.removeFromList(selected);
 			proxySettings.setSelected(MTP::ProxyData());
 			proxySettings.setSettings(MTP::ProxyData::Settings::System);
+			proxySettings.connectionTypeChangesNotify();
 		}
 	}
 #else
