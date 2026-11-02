@@ -93,8 +93,9 @@ base::EventFilterResult SkeletonAnimation::paint() {
 
 	p.setPen(Qt::NoPen);
 	if (gradientActive) {
-		const auto progress = period
-			/ float64(kSlideDuration);
+		const auto progress = anim::easeOutQuint(
+			1.,
+			period / float64(kSlideDuration));
 		const auto gradientWidth = textWidth;
 		const auto gradientStart = anim::interpolate(
 			left - gradientWidth,
