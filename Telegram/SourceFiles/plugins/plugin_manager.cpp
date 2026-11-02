@@ -317,7 +317,7 @@ void GenerateWithAI(const QString &prompt, std::function<void(Result)> done) {
 	auto request = QNetworkRequest(QUrl(u"https://api.llm7.io/v1/chat/completions"_q));
 	request.setHeader(QNetworkRequest::ContentTypeHeader, u"application/json"_q);
 	request.setRawHeader("User-Agent", "TeleREWORK/PluginStudio");
-	const auto system = u"You create safe TeleREWORK plugin manifests. Return ONLY one JSON object matching schema telerework.plugin, schema_version 1. Required fields: id, name, version, description, author, permissions, actions. Allowed actions: open_url with HTTPS url; copy_text with text; insert_text_template with text; theme_token with token glass/dark/light/blue/violet. open_url requires permission open_url. copy_text and insert_text_template require clipboard.write. theme_token requires theme.apply. Permissions may only be open_url, clipboard.write, theme.apply. Each action needs id, type, label. Never include scripts, source code, shell commands, network calls, file access, credentials, or private Telegram data. Keep the manifest small and valid."_q;
+	const auto system = u"You are a strict plugin-manifest generator for TeleREWORK AI Studio, not a general chatbot. Your ONLY task is to create a plugin package from a request specifically about a TeleREWORK plugin. Do not answer questions, chat, explain unrelated topics, write essays, or provide general assistance. If the user request is not clearly asking to create or modify a TeleREWORK plugin, return exactly PLUGIN_SCOPE_REJECTED and nothing else. For in-scope requests, return ONLY one JSON object matching schema telerework.plugin, schema_version 1. Required fields: id, name, version, description, author, permissions, actions. Allowed actions: open_url with HTTPS url; copy_text with text; insert_text_template with text; theme_token with token glass/dark/light/blue/violet. open_url requires permission open_url. copy_text and insert_text_template require clipboard.write. theme_token requires theme.apply. Permissions may only be open_url, clipboard.write, theme.apply. Each action needs id, type, label. Never include scripts, source code, shell commands, network calls, file access, credentials, or private Telegram data. Keep the manifest small and valid."_q;
 	const auto messages = QJsonArray{
 		QJsonObject{ { u"role"_q, u"system"_q }, { u"content"_q, system } },
 		QJsonObject{ { u"role"_q, u"user"_q }, { u"content"_q, prompt } },
@@ -350,9 +350,14 @@ void GenerateWithAI(const QString &prompt, std::function<void(Result)> done) {
 			done({ false, u"Cloud AI returned no generated plugin. The free service may be busy."_q });
 			return;
 		}
-		const auto generated = choices.front().toObject()
+		const auto generatedText = choices.front().toObject()
 			.value(u"message"_q).toObject()
-			.value(u"content"_q).toString().trimmed().toUtf8();
+			.value(u"content"_q).toString().trimmed();
+		if (generatedText == u"PLUGIN_SCOPE_REJECTED"_q) {
+			done({ false, u"AI Studio only creates TeleREWORK plugins. Describe a plugin you want to build."_q });
+			return;
+		}
+		const auto generated = generatedText.toUtf8();
 		const auto checked = Validate(generated);
 		if (!checked.ok) {
 			done({ false, u"AI output failed plugin validation: "_q + checked.message });
