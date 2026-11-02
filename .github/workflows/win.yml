@@ -46,6 +46,12 @@ on:
       - 'Telegram/configure.sh'
       - 'Telegram/Telegram.plist'
 
+# Keep only the newest Windows build queued for this branch.
+# A newer push cancels an older run instead of leaving stale builds waiting.
+concurrency:
+  group: tele-rework-windows-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
 
   windows:
