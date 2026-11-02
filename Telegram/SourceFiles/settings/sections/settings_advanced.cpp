@@ -25,6 +25,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "core/launcher.h"
 #include "core/update_channel.h"
 #include "core/update_checker.h"
+#include "core/version.h"
 #include "data/data_auto_download.h"
 #include "data/data_session.h"
 #include "export/export_manager.h"
@@ -83,6 +84,10 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #endif // !TDESKTOP_DISABLE_SPELLCHECK
 
 #include <ksandbox.h>
+
+#include <QtCore/QCryptographicHash>
+#include <QtCore/QDataStream>
+#include <QtCore/QFile>
 
 namespace Settings {
 namespace {
@@ -1271,8 +1276,163 @@ void BuildUpdateSection(SectionBuilder &builder, bool atTop) {
 	}
 }
 
+namespace {
+
+constexpr auto kTeleReworkConfigMagic = "TRWCFG01";
+constexpr auto kTeleReworkConfigVersion = 1;
+constexpr auto kTeleReworkConfigMaxBytes = 16 * 1024 * 1024;
+
+[[nodiscard]] QByteArray CreateTeleReworkConfig() {
+	// Start from the active preferences, then remove machine- and account-
+	// specific secrets before creating a shareable file.
+	auto safe = Core::Settings();
+	safe.addFromSerialized(Core::App().settings().serialize(), AppVersion);
+	safe.setTonsiteStorageToken({});
+	safe.proxy().setSettings(MTP::ProxyData::Settings::Disabled);
+	safe.proxy().setSelected(MTP::ProxyData());
+	safe.proxy().setList({});
+	safe.setDownloadPath({});
+	safe.setDownloadPathBookmark({});
+	safe.setPlaybackDeviceId({});
+	safe.setCaptureDeviceId({});
+	safe.setCameraDeviceId({});
+	safe.setCallPlaybackDeviceId({});
+	safe.setCallCaptureDeviceId({});
+
+	const auto payload = safe.serialize();
+	auto result = QByteArray();
+	QDataStream stream(&result, QIODevice::WriteOnly);
+	stream.setVersion(QDataStream::Qt_5_1);
+	stream
+		<< QByteArray(kTeleReworkConfigMagic)
+		<< quint32(kTeleReworkConfigVersion)
+		<< qint32(AppVersion)
+		<< payload
+		<< QCryptographicHash::hash(payload, QCryptographicHash::Sha256);
+	return (stream.status() == QDataStream::Ok) ? result : QByteArray();
+}
+
+[[nodiscard]] bool ReadTeleReworkConfig(
+		const QByteArray &file,
+		QByteArray *payload,
+		int *writerVersion) {
+	if (file.isEmpty() || file.size() > kTeleReworkConfigMaxBytes) {
+		return false;
+	}
+	auto stream = QDataStream(file);
+	stream.setVersion(QDataStream::Qt_5_1);
+	auto magic = QByteArray();
+	auto formatVersion = quint32(0);
+	auto version = qint32(0);
+	auto data = QByteArray();
+	auto checksum = QByteArray();
+	stream >> magic >> formatVersion >> version >> data >> checksum;
+	if (stream.status() != QDataStream::Ok
+		|| !stream.atEnd()
+		|| magic != QByteArray(kTeleReworkConfigMagic)
+		|| formatVersion != kTeleReworkConfigVersion
+		|| data.isEmpty()
+		|| data.size() > kTeleReworkConfigMaxBytes
+		|| checksum != QCryptographicHash::hash(
+			data,
+			QCryptographicHash::Sha256)) {
+		return false;
+	}
+	*payload = std::move(data);
+	*writerVersion = version;
+	return true;
+}
+
+} // namespace
+
 void BuildExportSection(SectionBuilder &builder) {
 	const auto controller = builder.controller();
+	const auto settings = &Core::App().settings();
+	builder.addSubsectionTitle({
+		.id = u"advanced/telerework_configs"_q,
+		.title = rpl::single(u"TeleREWORK configs"_q),
+		.keywords = { u"config"_q, u"configuration"_q, u"backup"_q },
+	});
+	builder.addButton({
+		.id = u"advanced/export_config"_q,
+		.title = rpl::single(u"Export settings (.tcfg)"_q),
+		.icon = { &st::menuIconExport },
+		.onClick = [=] {
+			FileDialog::GetWritePath(
+				Core::App().getFileDialogParent(),
+				u"Export TeleREWORK config"_q,
+				u"TeleREWORK config (*.tcfg)"_q,
+				u"TeleREWORK.tcfg"_q,
+				[=](QString &&path) {
+					const auto data = CreateTeleReworkConfig();
+					auto file = QFile(path);
+					if (data.isEmpty()
+						|| !file.open(QIODevice::WriteOnly)
+						|| file.write(data) != data.size()) {
+						controller->show(Ui::MakeInformBox({
+							.title = u"Config export failed"_q,
+							.text = u"TeleREWORK could not write the config file."_q,
+						}));
+					} else {
+						controller->show(Ui::MakeInformBox({
+							.title = u"Config exported"_q,
+							.text = u"The .tcfg file is ready to share. Account credentials, proxy passwords and device-specific paths are excluded."_q,
+						}));
+					}
+				});
+		},
+		.keywords = { u"export"_q, u"settings"_q, u"config"_q, u"share"_q },
+	});
+	builder.addButton({
+		.id = u"advanced/import_config"_q,
+		.title = rpl::single(u"Import settings (.tcfg)"_q),
+		.onClick = [=] {
+			FileDialog::GetOpenPath(
+				Core::App().getFileDialogParent(),
+				u"Import TeleREWORK config"_q,
+				u"TeleREWORK config (*.tcfg)"_q,
+				[=](FileDialog::OpenResult &&result) {
+					if (result.paths.isEmpty()) {
+						return;
+					}
+					auto file = QFile(result.paths.front());
+					QByteArray bytes;
+					if (!file.open(QIODevice::ReadOnly)
+						|| (bytes = file.read(kTeleReworkConfigMaxBytes + 1)).isEmpty()) {
+						controller->show(Ui::MakeInformBox({
+							.title = u"Invalid config"_q,
+							.text = u"The selected file could not be read."_q,
+						}));
+						return;
+					}
+					auto payload = QByteArray();
+					auto writerVersion = 0;
+					if (!ReadTeleReworkConfig(bytes, &payload, &writerVersion)) {
+						controller->show(Ui::MakeInformBox({
+							.title = u"Invalid config"_q,
+							.text = u"This file is not a valid TeleREWORK .tcfg file, or it is damaged."_q,
+						}));
+						return;
+					}
+					controller->show(Ui::MakeConfirmBox({
+						.title = u"Apply this config?"_q,
+						.text = u"Your current TeleREWORK preferences will be replaced by the settings in this file. This cannot be undone automatically. Continue?"_q,
+						.confirmText = u"Apply settings"_q,
+						.cancelText = u"Cancel"_q,
+						.confirmed = [=] {
+							settings->addFromSerialized(payload, writerVersion);
+							Core::App().saveSettings();
+							controller->show(Ui::MakeInformBox({
+								.title = u"Settings imported"_q,
+								.text = u"TeleREWORK settings have been updated."_q,
+							}));
+						},
+					}));
+				});
+		},
+		.keywords = { u"import"_q, u"settings"_q, u"config"_q, u"restore"_q },
+	});
+
 	const auto session = builder.session();
 	const auto showOther = builder.showOther();
 	builder.addSkip();
