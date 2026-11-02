@@ -289,7 +289,7 @@ dmg img iso vcd \
 pdb eot ics ips ipa core mem pcap ovpn part pcapng dmp pkpass dat zxp crash \
 file bak gbr plain dlc fon fnt otf ttc ttf gpx db rss cur \
 \
-tdesktop-endpoints"_q);
+tdesktop-endpoints tcfg"_q);
 
 	static const auto kExecutable = SplitExtensions(
 #ifdef Q_OS_WIN
