@@ -374,7 +374,15 @@ void Application::run() {
 								QThread::msleep(100);
 							}
 						}
-						if (ready) {
+						if (ready && _private->tgWsProxy->state() == QProcess::Running) {
+							const auto staleEntries = proxySettings.list();
+							for (const auto &entry : staleEntries) {
+								if (entry.type == MTP::ProxyData::Type::Mtproto
+									&& entry.host == u"127.0.0.1"_q
+									&& entry.port == 1443) {
+									proxySettings.removeFromList(entry);
+								}
+							}
 							auto local = MTP::ProxyData();
 							local.type = MTP::ProxyData::Type::Mtproto;
 							local.host = u"127.0.0.1"_q;
