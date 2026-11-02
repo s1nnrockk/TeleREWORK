@@ -121,6 +121,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 #include <QtGui/QGuiApplication>
 #include <QtGui/QClipboard>
+#include <QtCore/QSettings>
+#include <QtWidgets/QInputDialog>
 
 namespace HistoryView {
 namespace {
@@ -1833,6 +1835,52 @@ void FillContextMenuItems(
 			list->copySelectedText();
 			list->clearSelected();
 		}, &st::menuIconCopy);
+	}
+	if (request.overSelection
+		&& request.selectedItems.empty()
+		&& !request.selectedText.rich.text.trimmed().isEmpty()
+		&& !list->hasCopyRestrictionForSelected()) {
+		result->addAction(u"Save as Local Macro..."_q, [=] {
+			const auto selected = request.selectedText.rich.text;
+			bool accepted = false;
+			const auto name = QInputDialog::getText(
+				Core::App().getFileDialogParent(),
+				u"Local Macros"_q,
+				u"Macro name:"_q,
+				QLineEdit::Normal,
+				QString(),
+				&accepted).trimmed();
+			if (!accepted || name.isEmpty()) {
+				return;
+			}
+			auto settings = QSettings();
+			settings.beginGroup(u"TeleREWORK/LocalMacros"_q);
+			settings.setValue(name, selected);
+		}, &st::menuIconSave);
+	}
+	{
+		auto settings = QSettings();
+		settings.beginGroup(u"TeleREWORK/LocalMacros"_q);
+		const auto names = settings.childKeys();
+		if (!names.isEmpty()) {
+			result->addAction(u"Insert Local Macro..."_q, [=] {
+				auto accepted = false;
+				const auto name = QInputDialog::getItem(
+					Core::App().getFileDialogParent(),
+					u"Local Macros"_q,
+					u"Choose a macro to insert:"_q,
+					names,
+					0,
+					false,
+					&accepted);
+				if (!accepted || name.isEmpty()) {
+					return;
+				}
+				auto stored = QSettings();
+				stored.beginGroup(u"TeleREWORK/LocalMacros"_q);
+				list->insertTextAtCursor(stored.value(name).toString());
+			}, &st::menuIconPaste);
+		}
 	}
 	if (request.overSelection
 		&& request.selectedItems.empty()
