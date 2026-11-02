@@ -6,6 +6,7 @@ For license and copyright information please follow this link:
 https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "history/view/history_view_context_menu.h"
+#include "plugins/plugin_manager.h"
 
 #include "api/api_attached_stickers.h"
 #include "api/api_editing.h"
@@ -1832,6 +1833,52 @@ void FillContextMenuItems(
 			list->copySelectedText();
 			list->clearSelected();
 		}, &st::menuIconCopy);
+	}
+	if (request.overSelection
+		&& request.selectedItems.empty()
+		&& !request.selectedText.rich.text.trimmed().isEmpty()
+		&& !list->hasCopyRestrictionForSelected()) {
+		result->addAction(u"Improve selected text with AI"_q, [=] {
+			const auto choices = QStringList{
+				u"Fix spelling and grammar"_q,
+				u"Expand with more detail"_q,
+				u"Improve wording and clarity"_q,
+			};
+			bool accepted = false;
+			const auto instruction = QInputDialog::getItem(
+				Core::App().getFileDialogParent(),
+				u"TeleREWORK AI Text Editor"_q,
+				u"How should AI edit this text?"_q,
+				choices,
+				0,
+				false,
+				&accepted);
+			if (!accepted || instruction.isEmpty()) {
+				return;
+			}
+			if (QMessageBox::warning(
+					Core::App().getFileDialogParent(),
+					u"Cloud AI privacy notice"_q,
+					u"The selected text will be sent to LLM7.io for editing. Do not include private messages, passwords, login details, or personal information. Continue?"_q,
+					QMessageBox::Yes | QMessageBox::No,
+					QMessageBox::No) != QMessageBox::Yes) {
+				return;
+			}
+			Plugins::RewriteTextWithAI(
+				request.selectedText.rich.text,
+				instruction,
+				crl::guard(controller, [=](Plugins::Result rewritten) {
+					if (rewritten.ok) {
+					list->insertTextAtCursor(rewritten.message);
+					Ui::Toast::Show(u"AI text inserted into the message field. Review it before sending."_q);
+				} else {
+					controller->show(Ui::MakeInformBox({
+						.text = rewritten.message,
+						.title = u"AI text editing failed"_q,
+					}));
+				}
+				}));
+		}, &st::menuIconTranslate);
 	}
 	if (request.overSelection
 		&& view
