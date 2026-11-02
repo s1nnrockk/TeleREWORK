@@ -66,7 +66,8 @@ constexpr auto kMaxActions = 32;
 		const auto text = action.value(u"text"_q).toString();
 		return !text.isEmpty()
 			&& text.size() <= 4000
-			&& (type != u"copy_text"_q
+			&& ((type != u"copy_text"_q
+				&& type != u"insert_text_template"_q)
 				|| permissions.contains(u"clipboard.write"_q));
 	} else if (type == u"theme_token"_q) {
 		const auto token = action.value(u"token"_q).toString();
@@ -315,7 +316,7 @@ void GenerateWithLocalAI(const QString &prompt, std::function<void(Result)> done
 	static auto manager = new QNetworkAccessManager(QCoreApplication::instance());
 	auto request = QNetworkRequest(QUrl(u"http://127.0.0.1:11434/api/generate"_q));
 	request.setHeader(QNetworkRequest::ContentTypeHeader, u"application/json"_q);
-	const auto instructions = u"You generate TeleREWORK plugin JSON only. Return one JSON object matching schema telerework.plugin version 1. schema_version=1. Allowed actions only: open_url (https URL), copy_text (text), insert_text_template (text), theme_token (token glass/dark/light/blue/violet). permissions may only contain open_url, clipboard.write, theme.apply. Never include code, scripts, shell commands, network calls or file access. Every action needs id, type, label. Include id, name, version, description, author, permissions, actions. User request: "_q + prompt;
+	const auto instructions = u"You generate TeleREWORK plugin JSON only. Return one JSON object matching schema telerework.plugin version 1. schema_version=1. Allowed actions only: open_url (https URL), copy_text (text), insert_text_template (text), theme_token (token glass/dark/light/blue/violet). open_url requires permission open_url. copy_text and insert_text_template require permission clipboard.write. theme_token requires permission theme.apply. permissions may only contain open_url, clipboard.write, theme.apply. Never include code, scripts, shell commands, network calls or file access. Every action needs id, type, label. Include id, name, version, description, author, permissions, actions. User request: "_q + prompt;
 	const auto body = QJsonDocument(QJsonObject{
 		{ u"model"_q, u"qwen2.5-coder:3b"_q },
 		{ u"prompt"_q, instructions },
