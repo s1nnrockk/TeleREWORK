@@ -1622,7 +1622,7 @@ void BuildPluginCenterSection(SectionBuilder &builder) {
 	});
 	builder.addButton({
 		.id = u"advanced/plugins_ai_generate"_q,
-		.title = u"Generate plugin with free local AI"_q,
+		.title = u"Generate plugin with free cloud AI"_q,
 		.onClick = [=] {
 			bool accepted = false;
 			const auto prompt = QInputDialog::getMultiLineText(
@@ -1634,7 +1634,7 @@ void BuildPluginCenterSection(SectionBuilder &builder) {
 			if (!accepted || prompt.trimmed().isEmpty()) {
 				return;
 			}
-			Plugins::GenerateWithLocalAI(
+			Plugins::GenerateWithAI(
 				prompt,
 				crl::guard(controller, [=](Plugins::Result result) {
 					controller->show(Ui::MakeInformBox({
@@ -1761,10 +1761,10 @@ void BuildPluginCenterSection(SectionBuilder &builder) {
 	});
 	builder.addButton({
 		.id = u"advanced/plugins_ai_help"_q,
-		.title = u"How to enable local AI"_q,
+		.title = u"About free cloud AI"_q,
 		.onClick = [=] {
 			controller->show(Ui::MakeInformBox({
-				.text = u"AI Studio uses Ollama on this computer. Install Ollama, start its local service, then run: ollama pull qwen2.5-coder:3b. No API key or subscription is required. Model generation uses your computer's resources. Generated plugins are validated before installation. Plugin actions are declarative and are not yet connected to Telegram runtime events."_q,
+				.text = u"AI Studio uses the hosted LLM7.io free anonymous tier. No API key, account, Ollama, or model download is required. Your plugin description is sent to the cloud provider for generation; do not include private chats, passwords, or personal data. Free access is rate-limited and may be temporarily unavailable. Generated packages are validated and installed disabled; review permissions before enabling."_q,
 				.title = u"Free local AI"_q,
 			}));
 		},
