@@ -110,6 +110,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include <QtCore/QProcess>
 #include <QtCore/QRandomGenerator>
 #include <QtCore/QThread>
+#include <QtNetwork/QHostAddress>
 #include <QtNetwork/QTcpSocket>
 #include <QtCore/QMimeDatabase>
 #include <QtGui/QGuiApplication>
