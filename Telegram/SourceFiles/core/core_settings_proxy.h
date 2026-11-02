@@ -40,6 +40,9 @@ public:
 	[[nodiscard]] bool useProxyForCalls() const;
 	void setUseProxyForCalls(bool value);
 
+	[[nodiscard]] bool tgWsProxyEnabled() const;
+	void setTgWsProxyEnabled(bool value);
+
 	[[nodiscard]] bool proxyRotationEnabled() const;
 	void setProxyRotationEnabled(bool value);
 
@@ -77,6 +80,7 @@ private:
 	bool _tryIPv6 = false;
 	bool _useProxyForCalls = false;
 	bool _proxyRotationEnabled = false;
+	bool _tgWsProxyEnabled = false;
 	bool _checkIpWarningShown = false;
 	int _proxyRotationTimeout = kDefaultProxyRotationTimeout;
 	MTP::ProxyData::Settings _settings = MTP::ProxyData::Settings::System;
