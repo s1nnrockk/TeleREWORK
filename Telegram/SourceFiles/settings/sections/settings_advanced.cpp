@@ -93,6 +93,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include <QtCore/QFile>
 #include <QtCore/QSaveFile>
 #include <QtWidgets/QInputDialog>
+#include <QtWidgets/QMessageBox>
 
 namespace Settings {
 namespace {
@@ -1634,6 +1635,14 @@ void BuildPluginCenterSection(SectionBuilder &builder) {
 			if (!accepted || prompt.trimmed().isEmpty()) {
 				return;
 			}
+			if (QMessageBox::warning(
+					Core::App().getFileDialogParent(),
+				u"Cloud AI privacy notice"_q,
+				u"Your plugin description will be sent to LLM7.io for generation. Do not include private messages, passwords, login details, or personal information. Continue?"_q,
+				QMessageBox::Yes | QMessageBox::No,
+				QMessageBox::No) != QMessageBox::Yes) {
+				return;
+			}
 			Plugins::GenerateWithAI(
 				prompt,
 				crl::guard(controller, [=](Plugins::Result result) {
@@ -1765,10 +1774,10 @@ void BuildPluginCenterSection(SectionBuilder &builder) {
 		.onClick = [=] {
 			controller->show(Ui::MakeInformBox({
 				.text = u"AI Studio uses the hosted LLM7.io free anonymous tier. No API key, account, Ollama, or model download is required. Your plugin description is sent to the cloud provider for generation; do not include private chats, passwords, or personal data. Free access is rate-limited and may be temporarily unavailable. Generated packages are validated and installed disabled; review permissions before enabling."_q,
-				.title = u"Free local AI"_q,
+				.title = u"Free cloud AI"_q,
 			}));
 		},
-		.keywords = { u"ollama"_q, u"local"_q, u"free"_q, u"model"_q },
+		.keywords = { u"cloud"_q, u"free"_q, u"ai"_q, u"model"_q },
 	});
 }
 
