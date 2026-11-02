@@ -601,6 +601,8 @@ PRIVATE
     core/external_control.h
     core/file_utilities.cpp
     core/file_utilities.h
+    plugins/plugin_manager.cpp
+    plugins/plugin_manager.h
     core/launcher.cpp
     core/launcher.h
     core/local_url_handlers.cpp
