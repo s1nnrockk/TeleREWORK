@@ -15,10 +15,11 @@ const base = prefix ? `/${prefix}/` : "/";
 const endpoint = (p) => `${base}${p}`;
 const backendHost = env.MTPROXY_HOST;
 const backendPort = Number(env.MTPROXY_PORT || 443);
-const bridgeSecret = env.BRIDGE_SECRET;
+const mtproxySecretHex = env.MTPROXY_SECRET_HEX || "";
 const sessionTtl = Math.min(3600, Math.max(60, Number(env.SESSION_TTL || 900)));
-if (!backendHost || !bridgeSecret || bridgeSecret.length < 32) {
-  throw new Error("Set MTPROXY_HOST and a BRIDGE_SECRET of at least 32 characters");
+if (!backendHost) throw new Error("Set MTPROXY_HOST");
+if (!/^(?:[0-9a-fA-F]{2}){16,64}$/.test(mtproxySecretHex)) {
+  throw new Error("MTPROXY_SECRET_HEX must contain 16–64 bytes of hexadecimal MTProxy secret");
 }
 const MAX_FRAME = 1024 * 1024;
 const WINDOW = 4 * 1024 * 1024;
@@ -112,7 +113,10 @@ function openStream(s, id) {
   const stream = {socket, recv:WINDOW, send:WINDOW, pending:[], pendingBytes:0};
   s.streams.set(id,stream);
   socket.setNoDelay(true);
-  socket.on("connect",()=>{\n    const grant=Buffer.alloc(4); grant.writeUInt32BE(WINDOW);\n    send(s,frame(0x04,id,grant));\n  });
+  socket.on("connect",()=>{
+    const grant=Buffer.alloc(4); grant.writeUInt32BE(WINDOW);
+    send(s,frame(0x04,id,grant));
+  });
   socket.on("data",chunk=>{
     if (stream.closed) return;
     let offset=0;
@@ -195,7 +199,7 @@ const server=http.createServer(async(req,res)=>{
   if(req.method==="POST" && url.pathname===endpoint("api/v1/session")){
     try{
       const body=JSON.parse((await readBody(req)).toString("utf8"));
-      if(typeof body.cap!=="string"||!safeEqual(body.cap,derive(env.PUBLIC_HOST||"proxy.example.com",prefix,env.MTPROXY_SECRET_HEX||""))) return json(res,403,{error:"invalid capability"});
+      if(typeof body.cap!=="string"||!safeEqual(body.cap,derive(env.PUBLIC_HOST||"proxy.example.com",prefix,mtproxySecretHex))) return json(res,403,{error:"invalid capability"});
       if(sessions.size>=MAX_SESSIONS)return json(res,503,{error:"capacity"});
       const token=b64url(randomBytes(32));const id=createHash("sha256").update(token).digest("hex");
       sessions.set(id,{id,expires:Date.now()+sessionTtl*1000,streams:new Map(),queue:[],queueBytes:0,downWaiter:null,closed:false});
