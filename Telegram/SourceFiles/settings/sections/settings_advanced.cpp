@@ -148,6 +148,29 @@ void BuildDataStorageSection(SectionBuilder &builder) {
 		.keywords = { u"connection"_q, u"proxy"_q, u"network"_q, u"vpn"_q },
 	});
 
+	const auto tgWsProxyRow = builder.addButton({
+		.id = u"advanced/tg_ws_proxy"_q,
+		.title = rpl::single(u"TG WS Proxy (restart required)"_q),
+		.icon = { &st::menuIconNetwork },
+		.label = rpl::single(u"Built-in local WebSocket transport"_q),
+		.keywords = { u"tg ws proxy"_q, u"websocket"_q, u"connection"_q },
+	});
+	if (tgWsProxyRow) {
+		const auto [toggle, checkView] = AddSeparatedToggle(
+			tgWsProxyRow,
+			st::settingsButton,
+			Core::App().settings().proxy().tgWsProxyEnabled());
+		toggle->clicks() | rpl::on_next([=] {
+			auto &proxy = Core::App().settings().proxy();
+			proxy.setTgWsProxyEnabled(!proxy.tgWsProxyEnabled());
+			checkView->setChecked(
+				proxy.tgWsProxyEnabled(),
+				anim::type::normal);
+			Core::App().saveSettingsDelayed();
+		}, toggle->lifetime());
+	}
+
+
 	const auto showDownloadPath = container
 		? container->lifetime().make_state<rpl::variable<bool>>(
 			!Core::App().settings().askDownloadPath())
