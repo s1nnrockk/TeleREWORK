@@ -305,7 +305,7 @@ void RoundCheckbox::setChecked(bool newChecked, anim::type animated) {
 			_checked ? 0. : 1.,
 			_checked ? 1. : 0.,
 			_st.duration,
-			anim::linear);
+			anim::easeOutQuint);
 	} else {
 		_checkedProgress.stop();
 	}
