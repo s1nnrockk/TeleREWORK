@@ -46,7 +46,7 @@ void CrossFadeLabel::setText(
 		0.,
 		1.,
 		kDuration,
-		anim::easeOutCubic);
+		anim::easeOutQuint);
 }
 
 void CrossFadeLabel::setDirection(int direction) {
