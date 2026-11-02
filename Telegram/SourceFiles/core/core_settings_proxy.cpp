@@ -128,7 +128,7 @@ QByteArray SettingsProxy::serialize() const {
 			0,
 			ranges::plus(),
 			&Serialize::bytearraySize)
-		+ (4 + int(_proxyRotationPreferredIndices.size())) * sizeof(qint32);
+		+ (5 + int(_proxyRotationPreferredIndices.size())) * sizeof(qint32);
 	auto stream = Serialize::ByteArrayWriter(size);
 	stream
 		<< qint32(_tryIPv6 ? 1 : 0)
