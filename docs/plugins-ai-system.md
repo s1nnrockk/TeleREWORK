@@ -34,6 +34,8 @@ No plugin can read message history, contacts, authentication data, local files, 
 
 ## AI generation flow
 
+AI Studio is a plugin-only generator, not a general-purpose chat assistant. Out-of-scope prompts are rejected and do not produce conversational answers.
+
 1. User describes the plugin in one prompt.
 2. AI Studio sends only that prompt and the versioned schema to the free hosted AI endpoint.
 3. The model returns one JSON package, not executable source code.
@@ -73,11 +75,11 @@ Implemented in source:
 - `.tplugin` import/export with atomic writes and a 256 KB package limit.
 - Enable/disable state stored separately from package contents.
 - Anonymous cloud generation through LLM7.io (`gpt-oss:20b`); no user key or local model is required. Generated JSON is validated and installed disabled.
-- Basic Advanced Settings UI for import, export, generation, plugin management and running supported actions.
+- Basic Advanced Settings UI for import, export, generation, plugin management, running supported actions and installing bundled catalog packages.
 - User-invoked `open_url`, `copy_text` and `insert_text_template` actions. Text templates are copied to the clipboard for manual pasting.
 
 Not yet implemented:
-- A dedicated polished multi-tab Plugin Center window, marketplace/discovery, plugin settings UI and rich action previews.
+- A remote marketplace, automatic catalog updates, dedicated polished multi-tab Plugin Center window, plugin settings UI and rich action previews.
 - Theme-token action execution and deeper Telegram host APIs/events.
 - Sandboxed third-party native/JavaScript plugins. Arbitrary executable code is intentionally unsupported.
 - Build verification. Check the GitHub Actions runs for the latest commit before distributing binaries.
