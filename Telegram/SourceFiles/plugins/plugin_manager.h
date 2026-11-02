@@ -35,8 +35,8 @@ struct Result {
 [[nodiscard]] QStringList ActionLabels(const QString &id);
 [[nodiscard]] Result ExecuteAction(const QString &id, const QString &label);
 
-// Uses a local Ollama-compatible endpoint. No API key or paid provider is used.
-void GenerateWithLocalAI(
+// Uses a hosted anonymous free-tier endpoint. No local model or user API key is required.
+void GenerateWithAI(
 	const QString &prompt,
 	std::function<void(Result)> done);
 
